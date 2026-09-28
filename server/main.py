@@ -27,7 +27,7 @@ async def keep_alive_ping():
         await asyncio.sleep(600)  # Every 10 minutes to keep Render alive 24/7
         try:
             render_url = os.environ.get("RENDER_EXTERNAL_URL", "https://jamu-cat.onrender.com")
-            urllib.request.urlopen(render_url)
+            await asyncio.to_thread(urllib.request.urlopen, render_url, timeout=10)
             print("[Keep-Alive] Self-ping successful to prevent Render sleep")
         except Exception as e:
             print(f"[Keep-Alive] Self-ping error: {e}")
