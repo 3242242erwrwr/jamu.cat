@@ -46,7 +46,14 @@ def init_db():
 def register_user(username: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO users (username, display_name) VALUES (?, ?)", (username.strip(), username.strip()))
+    clean = username.strip()
+    cursor.execute("SELECT username FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
+    row = cursor.fetchone()
+    if row:
+        existing_uname = row[0]
+        cursor.execute("UPDATE users SET display_name = ? WHERE username = ?", (clean, existing_uname))
+    else:
+        cursor.execute("INSERT INTO users (username, display_name) VALUES (?, ?)", (clean, clean))
     conn.commit()
     conn.close()
 
@@ -54,7 +61,7 @@ def update_user_profile(username: str, display_name: str, profile_image_url: str
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
-        UPDATE users SET display_name = ?, profile_image_url = ? WHERE username = ?
+        UPDATE users SET display_name = ?, profile_image_url = ? WHERE LOWER(username) = LOWER(?)
     """, (display_name.strip(), profile_image_url, username.strip()))
     conn.commit()
     conn.close()
@@ -62,14 +69,14 @@ def update_user_profile(username: str, display_name: str, profile_image_url: str
 def save_fcm_token(username: str, fcm_token: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("UPDATE users SET fcm_token = ? WHERE username = ?", (fcm_token, username.strip()))
+    cursor.execute("UPDATE users SET fcm_token = ? WHERE LOWER(username) = LOWER(?)", (fcm_token, username.strip()))
     conn.commit()
     conn.close()
 
 def get_fcm_token(username: str) -> str:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT fcm_token FROM users WHERE username = ?", (username.strip(),))
+    cursor.execute("SELECT fcm_token FROM users WHERE LOWER(username) = LOWER(?)", (username.strip(),))
     row = cursor.fetchone()
     conn.close()
     return row[0] if row and row[0] else ""
@@ -112,7 +119,7 @@ def get_chat_history(user1: str, user2: str) -> List[Dict]:
     cursor = conn.cursor()
     cursor.execute("""
         SELECT id, sender, receiver, text, image_url, timestamp FROM messages
-        WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)
+        WHERE (LOWER(sender) = LOWER(?) AND LOWER(receiver) = LOWER(?)) OR (LOWER(sender) = LOWER(?) AND LOWER(receiver) = LOWER(?))
         ORDER BY created_at ASC
     """, (user1.strip(), user2.strip(), user2.strip(), user1.strip()))
     rows = cursor.fetchall()
@@ -142,7 +149,7 @@ def delete_chat_history(user1: str, user2: str):
     cursor = conn.cursor()
     cursor.execute("""
         DELETE FROM messages
-        WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)
+        WHERE (LOWER(sender) = LOWER(?) AND LOWER(receiver) = LOWER(?)) OR (LOWER(sender) = LOWER(?) AND LOWER(receiver) = LOWER(?))
     """, (user1.strip(), user2.strip(), user2.strip(), user1.strip()))
     conn.commit()
     conn.close()

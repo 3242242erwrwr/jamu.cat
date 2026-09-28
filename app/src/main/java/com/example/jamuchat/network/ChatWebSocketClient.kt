@@ -36,14 +36,38 @@ class ChatWebSocketClient(
     private var currentUsername: String = ""
     private var currentBaseUrl: String = ""
     private var isIntentionallyClosed: Boolean = false
+    private var pingRunnable: Runnable? = null
 
     private val client = OkHttpClient.Builder()
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .connectTimeout(30, TimeUnit.SECONDS)
-        .pingInterval(5, TimeUnit.SECONDS) // Fast 5s ping-pong to keep Render proxy alive 24/7
+        .pingInterval(5, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
+
+    private fun startPingLoop() {
+        stopPingLoop()
+        pingRunnable = Runnable {
+            try {
+                if (webSocket != null && !isIntentionallyClosed) {
+                    val json = JSONObject().apply { put("type", "ping") }
+                    webSocket?.send(json.toString())
+                }
+            } catch (e: Exception) {
+                Log.e("JAMU_WS", "Ping loop error: ${e.message}")
+            }
+            if (!isIntentionallyClosed) {
+                mainHandler.postDelayed(pingRunnable!!, 8000)
+            }
+        }
+        mainHandler.postDelayed(pingRunnable!!, 8000)
+    }
+
+    private fun stopPingLoop() {
+        pingRunnable?.let { mainHandler.removeCallbacks(it) }
+        pingRunnable = null
+    }
 
     fun connect(baseUrl: String, username: String) {
         currentUsername = username
@@ -84,6 +108,7 @@ class ChatWebSocketClient(
                 Log.d("JAMU_WS", "WebSocket successfully connected: $username")
                 mainHandler.post {
                     onConnectionStatusChanged(true)
+                    startPingLoop()
                 }
             }
 
@@ -181,6 +206,7 @@ class ChatWebSocketClient(
                 val errorDetails = t.localizedMessage ?: "Serverga ulanib bo'lmadi"
                 Log.e("JAMU_WS", "WebSocket error: $errorDetails")
                 mainHandler.post {
+                    stopPingLoop()
                     onConnectionStatusChanged(false)
                     onErrorOccurred("$errorDetails ($wsUrl)")
                     scheduleReconnect()
@@ -190,6 +216,7 @@ class ChatWebSocketClient(
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 Log.d("JAMU_WS", "WebSocket closed: $reason")
                 mainHandler.post {
+                    stopPingLoop()
                     onConnectionStatusChanged(false)
                     scheduleReconnect()
                 }
@@ -262,6 +289,7 @@ class ChatWebSocketClient(
 
     private fun closeInternal() {
         try {
+            stopPingLoop()
             webSocket?.close(1000, "User disconnect")
             webSocket = null
         } catch (e: Exception) {

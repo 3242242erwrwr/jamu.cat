@@ -130,7 +130,7 @@ class ConnectionManager:
             uname = u["username"].strip()
             users_with_status.append({
                 "name": uname,
-                "display_name": u["display_name"],
+                "display_name": u["display_name"] or uname,
                 "profile_image_url": u["profile_image_url"],
                 "is_online": self.is_online(uname)
             })
@@ -237,13 +237,16 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     try:
         while True:
             data_text = await websocket.receive_text()
-            print(f"[{username}] kelgan xabar: {data_text[:100]}")
 
             try:
                 data = json.loads(data_text)
                 msg_type = data.get("type")
 
-                if msg_type == "register_fcm":
+                if msg_type == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+                    await manager.broadcast_user_list()
+
+                elif msg_type == "register_fcm":
                     fcm_token = data.get("fcm_token")
                     if fcm_token:
                         save_fcm_token(username, fcm_token)
