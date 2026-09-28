@@ -117,11 +117,15 @@ class ConnectionManager:
         print(f"[+] '{clean_name}' online bo'ldi. Total Online: {len(self.active_users)}")
         await self.broadcast_user_list()
 
-    def disconnect(self, username: str):
+    def disconnect(self, username: str, websocket: WebSocket = None):
         key = username.strip().lower()
         if key in self.active_users:
-            del self.active_users[key]
-            print(f"[-] '{username}' offline bo'ldi. Total Online: {len(self.active_users)}")
+            # Safe disconnect: ONLY disconnect if the disconnecting websocket matches current active websocket!
+            if websocket is None or self.active_users[key] == websocket:
+                del self.active_users[key]
+                print(f"[-] '{username}' offline bo'ldi. Total Online: {len(self.active_users)}")
+            else:
+                print(f"[-] Stale websocket disconnect ignored for '{username}'")
 
     async def broadcast_user_list(self):
         all_users = get_all_registered_users()
@@ -147,10 +151,10 @@ class ConnectionManager:
             try:
                 await ws.send_text(message_text)
             except Exception:
-                disconnected.append(uname_key)
+                disconnected.append((uname_key, ws))
 
-        for user_key in disconnected:
-            self.disconnect(user_key)
+        for user_key, ws in disconnected:
+            self.disconnect(user_key, ws)
 
     def send_fcm_push(self, receiver: str, sender: str, message: str):
         fcm_token = get_fcm_token(receiver)
@@ -198,14 +202,14 @@ class ConnectionManager:
                 await receiver_ws.send_text(payload)
                 sent_to_receiver = True
             except Exception:
-                self.disconnect(receiver)
+                self.disconnect(receiver, receiver_ws)
 
         sender_ws = self.get_socket(sender)
         if sender_ws and sender.strip().lower() != receiver.strip().lower():
             try:
                 await sender_ws.send_text(payload)
             except Exception:
-                self.disconnect(sender)
+                self.disconnect(sender, sender_ws)
 
         if not sent_to_receiver:
             push_text = message if message else "🖼 Rasm"
@@ -315,11 +319,11 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
                 print(f"[Xatolik] Yaroqsiz JSON format ({username})")
 
     except WebSocketDisconnect:
-        manager.disconnect(username)
+        manager.disconnect(username, websocket)
         await manager.broadcast_user_list()
     except Exception as e:
         print(f"[Xatolik] {username} ulanishda xatolik: {e}")
-        manager.disconnect(username)
+        manager.disconnect(username, websocket)
         await manager.broadcast_user_list()
 
 
