@@ -1,0 +1,4 @@
+# Ngrok bepul static domain va token sozlamalari
+# ngrok.com saytidan tekin token va static domain olib shu yerga yozishingiz mumkin:
+authtoken=
+domain=
