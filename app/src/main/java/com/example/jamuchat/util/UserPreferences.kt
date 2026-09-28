@@ -19,7 +19,15 @@ class UserPreferences(context: Context) {
 
     fun getUsername(): String? {
         val name = prefs.getString(KEY_USERNAME, null)
-        return if (!name.isNullOrBlank()) name else null
+        if (!name.isNullOrBlank()) {
+            val lower = name.trim().lowercase()
+            if (lower.contains("jamshid") || lower.contains("dilrabo") || lower.contains("jak")) {
+                prefs.edit().remove(KEY_USERNAME).apply()
+                return null
+            }
+            return name
+        }
+        return null
     }
 
     fun saveServerUrl(url: String) {

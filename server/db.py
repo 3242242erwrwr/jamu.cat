@@ -83,10 +83,17 @@ def get_all_registered_users() -> List[Dict]:
 
     result = []
     for r in rows:
+        pimg = r[2] or ""
+        if "trycloudflare.com" in pimg:
+            parts = pimg.split("/uploads/profile/")
+            if len(parts) > 1:
+                pimg = f"https://jamu-cat.onrender.com/uploads/profile/{parts[1]}"
+            else:
+                pimg = ""
         result.append({
             "username": r[0],
             "display_name": r[1] or r[0],
-            "profile_image_url": r[2] or ""
+            "profile_image_url": pimg
         })
     return result
 
@@ -113,12 +120,19 @@ def get_chat_history(user1: str, user2: str) -> List[Dict]:
 
     result = []
     for r in rows:
+        img_url = r[4] or ""
+        if "trycloudflare.com" in img_url:
+            parts = img_url.split("/uploads/")
+            if len(parts) > 1:
+                img_url = f"https://jamu-cat.onrender.com/uploads/{parts[1]}"
+            else:
+                img_url = ""
         result.append({
             "id": r[0],
             "sender": r[1],
             "receiver": r[2],
             "text": r[3] or "",
-            "image_url": r[4],
+            "image_url": img_url if img_url else None,
             "timestamp": r[5] or ""
         })
     return result
