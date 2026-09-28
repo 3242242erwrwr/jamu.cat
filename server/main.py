@@ -1,8 +1,13 @@
 import json
 import os
+import sys
 import uuid
 import uvicorn
 from typing import Dict, List
+
+# Add current directory to sys.path so imports work when run from root
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from db import init_db, register_user, update_user_profile, save_fcm_token, get_fcm_token, get_all_registered_users, save_message, get_chat_history, delete_chat_history
