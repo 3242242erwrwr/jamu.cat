@@ -35,7 +35,7 @@ import com.example.jamuchat.ui.theme.JamuchatTheme
 @Composable
 fun LoginScreen(
     initialUsername: String = "",
-    initialServerUrl: String = "https://experiencing-regulations-bands-clara.trycloudflare.com",
+    initialServerUrl: String = "https://jamu-cat.onrender.com",
     onLoginSuccess: (username: String, serverUrl: String) -> Unit,
     modifier: Modifier = Modifier
 ) {

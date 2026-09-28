@@ -79,34 +79,44 @@ class ConnectionManager:
     """JAMU.chat foydalanuvchilarining WebSocket ulanishlarini va statuslarini boshqaruvchi menejer"""
 
     def __init__(self):
-        # Username -> WebSocket mapping (Hozir online bo'lganlar)
+        # username_lower -> WebSocket
         self.active_users: Dict[str, WebSocket] = {}
+
+    def is_online(self, username: str) -> bool:
+        if not username:
+            return False
+        return username.strip().lower() in self.active_users
+
+    def get_socket(self, username: str) -> WebSocket:
+        if not username:
+            return None
+        return self.active_users.get(username.strip().lower())
 
     async def connect(self, username: str, websocket: WebSocket):
         await websocket.accept()
-        username = username.strip()
-        register_user(username)  # Foydalanuvchini bazaga qo'shish
-        self.active_users[username] = websocket
-        print(f"[+] '{username}' online bo'ldi. Online: {len(self.active_users)}")
+        clean_name = username.strip()
+        key = clean_name.lower()
+        register_user(clean_name)
+        self.active_users[key] = websocket
+        print(f"[+] '{clean_name}' online bo'ldi. Total Online: {len(self.active_users)}")
         await self.broadcast_user_list()
 
     def disconnect(self, username: str):
-        username = username.strip()
-        if username in self.active_users:
-            del self.active_users[username]
-            print(f"[-] '{username}' offline bo'ldi (LEKIN ro'yxatda qoladi). Online: {len(self.active_users)}")
+        key = username.strip().lower()
+        if key in self.active_users:
+            del self.active_users[key]
+            print(f"[-] '{username}' offline bo'ldi. Total Online: {len(self.active_users)}")
 
     async def broadcast_user_list(self):
-        """Barcha ro'yxatdan o'tgan foydalanuvchilar va ularning profil ma'lumotlari ile online statusini yuboradi"""
         all_users = get_all_registered_users()
         users_with_status = []
         for u in all_users:
-            username = u["username"]
+            uname = u["username"].strip()
             users_with_status.append({
-                "name": username,
+                "name": uname,
                 "display_name": u["display_name"],
                 "profile_image_url": u["profile_image_url"],
-                "is_online": (username in self.active_users)
+                "is_online": self.is_online(uname)
             })
 
         payload = json.dumps({
@@ -117,14 +127,14 @@ class ConnectionManager:
 
     async def broadcast_raw(self, message_text: str):
         disconnected = []
-        for username, ws in list(self.active_users.items()):
+        for uname_key, ws in list(self.active_users.items()):
             try:
                 await ws.send_text(message_text)
             except Exception:
-                disconnected.append(username)
+                disconnected.append(uname_key)
 
-        for user in disconnected:
-            self.disconnect(user)
+        for user_key in disconnected:
+            self.disconnect(user_key)
 
     def send_fcm_push(self, receiver: str, sender: str, message: str):
         fcm_token = get_fcm_token(receiver)
@@ -153,7 +163,6 @@ class ConnectionManager:
             print(f"[FCM Info] Push Notification ({e})")
 
     async def send_private_message(self, msg_id: str, sender: str, receiver: str, message: str, image_url: str, timestamp: str) -> bool:
-        # Xabarni SQLite bazaga saqlash
         save_message(msg_id, sender, receiver, message, image_url, timestamp)
 
         payload = json.dumps({
@@ -167,22 +176,21 @@ class ConnectionManager:
         })
 
         sent_to_receiver = False
-        # 1. Receiver online bo'lsa, instant WebSocket yuborish
-        if receiver in self.active_users:
+        receiver_ws = self.get_socket(receiver)
+        if receiver_ws:
             try:
-                await self.active_users[receiver].send_text(payload)
+                await receiver_ws.send_text(payload)
                 sent_to_receiver = True
             except Exception:
                 self.disconnect(receiver)
 
-        # 2. Sender online bo'lsa, o'ziga ham tasdiq yuborish
-        if sender in self.active_users and sender != receiver:
+        sender_ws = self.get_socket(sender)
+        if sender_ws and sender.strip().lower() != receiver.strip().lower():
             try:
-                await self.active_users[sender].send_text(payload)
+                await sender_ws.send_text(payload)
             except Exception:
                 self.disconnect(sender)
 
-        # 3. Agar receiver offline bo'lsa, FCM Notification yuborish
         if not sent_to_receiver:
             push_text = message if message else "🖼 Rasm"
             self.send_fcm_push(receiver=receiver, sender=sender, message=push_text)
@@ -226,7 +234,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
 
                 elif msg_type == "update_profile":
                     target_user = data.get("username", username)
-                    # Security check: User can only update their own profile!
                     if target_user.strip().lower() == username.strip().lower():
                         display_name = data.get("display_name", username)
                         profile_image_url = data.get("profile_image_url", "")
@@ -254,9 +261,10 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
                             "type": "chat_history_cleared",
                             "target_user": username
                         })
-                        if target_user in manager.active_users:
+                        target_ws = manager.get_socket(target_user)
+                        if target_ws:
                             try:
-                                await manager.active_users[target_user].send_text(cleared_payload)
+                                await target_ws.send_text(cleared_payload)
                             except Exception:
                                 pass
 

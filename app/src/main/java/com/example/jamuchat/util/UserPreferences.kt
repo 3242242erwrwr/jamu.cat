@@ -10,7 +10,7 @@ class UserPreferences(context: Context) {
     companion object {
         private const val KEY_USERNAME = "KEY_USERNAME"
         private const val KEY_SERVER_URL = "KEY_SERVER_URL"
-        private const val DEFAULT_SERVER_URL = "https://experiencing-regulations-bands-clara.trycloudflare.com"
+        private const val DEFAULT_SERVER_URL = "https://jamu-cat.onrender.com"
     }
 
     fun saveUsername(username: String) {
@@ -30,7 +30,12 @@ class UserPreferences(context: Context) {
     }
 
     fun getServerUrl(): String {
-        return prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+        val saved = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+        if (saved.contains("trycloudflare.com") || saved.contains("192.168.")) {
+            saveServerUrl(DEFAULT_SERVER_URL)
+            return DEFAULT_SERVER_URL
+        }
+        return saved
     }
 
     fun clear() {
