@@ -2,6 +2,8 @@ import json
 import os
 import sys
 import uuid
+import asyncio
+import urllib.request
 import uvicorn
 from typing import Dict, List
 
@@ -19,6 +21,20 @@ app = FastAPI(
     description="Real-time Private Chat backend server with SQLite storage, Profile updates, and FCM Notifications for JAMU.chat",
     version="6.0.0"
 )
+
+async def keep_alive_ping():
+    while True:
+        await asyncio.sleep(600)  # Every 10 minutes to keep Render alive 24/7
+        try:
+            render_url = os.environ.get("RENDER_EXTERNAL_URL", "https://jamu-cat.onrender.com")
+            urllib.request.urlopen(render_url)
+            print("[Keep-Alive] Self-ping successful to prevent Render sleep")
+        except Exception as e:
+            print(f"[Keep-Alive] Self-ping error: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(keep_alive_ping())
 
 # Upload directory setup for profile images
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads", "profile")

@@ -144,7 +144,7 @@ fun JamuMessageInput(
 
                 Button(
                     onClick = { handleSend() },
-                    enabled = (messageText.trim().isNotEmpty() || selectedImageUri != null) && isOnline,
+                    enabled = messageText.trim().isNotEmpty() || selectedImageUri != null,
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = TelegramBluePrimary,

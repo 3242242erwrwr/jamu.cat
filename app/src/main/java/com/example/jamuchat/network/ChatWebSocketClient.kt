@@ -41,7 +41,8 @@ class ChatWebSocketClient(
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .connectTimeout(30, TimeUnit.SECONDS)
-        .pingInterval(8, TimeUnit.SECONDS) // Keep-alive ping every 8 seconds for 4G/5G carrier NAT stability
+        .pingInterval(5, TimeUnit.SECONDS) // Fast 5s ping-pong to keep Render proxy alive 24/7
+        .retryOnConnectionFailure(true)
         .build()
 
     fun connect(baseUrl: String, username: String) {
@@ -203,7 +204,7 @@ class ChatWebSocketClient(
                     Log.d("JAMU_WS", "Auto-reconnecting to WebSocket...")
                     connect(currentBaseUrl, currentUsername)
                 }
-            }, 4000)
+            }, 2000)
         }
     }
 
