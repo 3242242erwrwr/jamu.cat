@@ -189,6 +189,7 @@ fun MainChatScreen(
             usersList = usersList,
             hiddenUsers = hiddenUsers,
             selectedUser = selectedPrivateUser,
+            typingUsersMap = typingUsersMap,
             isOnline = isOnline,
             errorMessage = errorMessage,
             onReconnect = onReconnect,
@@ -265,6 +266,7 @@ fun UserListScreen(
     usersList: List<UserStatus>,
     hiddenUsers: List<String>,
     selectedUser: String? = null,
+    typingUsersMap: Map<String, Boolean> = emptyMap(),
     isOnline: Boolean,
     errorMessage: String?,
     onReconnect: () -> Unit,
@@ -433,6 +435,7 @@ fun UserListScreen(
                     items(displayedUsers) { userStatus ->
                         val isSelf = userStatus.name.trim().equals(currentUserName.trim(), ignoreCase = true)
                         val isSelected = userStatus.name.trim().equals(selectedUser?.trim(), ignoreCase = true)
+                        val isTyping = typingUsersMap[userStatus.name.trim().lowercase()] ?: false
 
                         AnimatedVisibility(
                             visible = true,
@@ -441,6 +444,7 @@ fun UserListScreen(
                             JamuUserItem(
                                 userStatus = userStatus,
                                 isSelf = isSelf,
+                                isTyping = isTyping,
                                 isSelected = isSelected,
                                 onClick = {
                                     if (isSelf) {

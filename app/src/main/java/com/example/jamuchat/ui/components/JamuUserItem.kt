@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.jamuchat.network.UserStatus
 import com.example.jamuchat.ui.theme.JamuOfflineRed
 import com.example.jamuchat.ui.theme.JamuOnlineGreen
+import com.example.jamuchat.ui.theme.TelegramBluePrimary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -54,6 +55,7 @@ fun formatLastSeen(timestampStr: String): String {
 fun JamuUserItem(
     userStatus: UserStatus,
     isSelf: Boolean,
+    isTyping: Boolean = false,
     isSelected: Boolean = false,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -124,12 +126,21 @@ fun JamuUserItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(1.dp))
-                val statusText = if (isSelf) "Profil" else if (userStatus.isOnline) "🟢 Online" else "🔴 " + formatLastSeen(userStatus.lastSeen)
+                val statusText = if (isSelf) {
+                    "Profil"
+                } else if (isTyping) {
+                    "✍️ Senga xabar yozyapti..."
+                } else if (userStatus.isOnline) {
+                    "🟢 Online"
+                } else {
+                    "🔴 " + formatLastSeen(userStatus.lastSeen)
+                }
                 Text(
                     text = statusText,
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 8.sp,
-                    color = if (userStatus.isOnline) JamuOnlineGreen else JamuOfflineRed,
+                    fontWeight = if (isTyping) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isTyping) TelegramBluePrimary else if (userStatus.isOnline) JamuOnlineGreen else JamuOfflineRed,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
