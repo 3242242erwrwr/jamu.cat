@@ -65,6 +65,16 @@ async def get_version_json():
     }
 
 
+def get_public_base_url(request: Request) -> str:
+    render_url = os.environ.get("RENDER_EXTERNAL_URL", "https://jamu-cat.onrender.com")
+    if render_url and "onrender.com" in render_url:
+        return render_url.rstrip('/')
+    host = request.headers.get("host", "")
+    if host and "onrender.com" in host:
+        return f"https://{host}"
+    return "https://jamu-cat.onrender.com"
+
+
 @app.post("/users/profile-image")
 async def upload_profile_image(request: Request, file: UploadFile = File(...)):
     try:
@@ -80,7 +90,7 @@ async def upload_profile_image(request: Request, file: UploadFile = File(...)):
         with open(file_path, "wb") as f:
             f.write(contents)
 
-        base_url = str(request.base_url).rstrip('/')
+        base_url = get_public_base_url(request)
         profile_image_url = f"{base_url}/uploads/profile/{unique_filename}"
 
         return {"profile_image_url": profile_image_url}
@@ -105,7 +115,7 @@ async def upload_chat_image(request: Request, file: UploadFile = File(...)):
         with open(file_path, "wb") as f:
             f.write(contents)
 
-        base_url = str(request.base_url).rstrip('/')
+        base_url = get_public_base_url(request)
         image_url = f"{base_url}/uploads/chat/{unique_filename}"
 
         return {"image_url": image_url}
