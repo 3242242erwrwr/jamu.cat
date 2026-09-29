@@ -312,26 +312,27 @@ fun UserListScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // AI Button (Right next to username as requested in screenshot)
+                        // Modern Glowing AI Tarjimon Button
                         Surface(
                             onClick = onOpenAiChat,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.primaryContainer,
                             border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0xFFA855F7)))
+                                1.5.dp,
+                                Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0xFF3B82F6), Color(0xFFA855F7)))
                             ),
+                            shadowElevation = 4.dp,
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                             ) {
-                                Text(text = "🤖 ", fontSize = 10.sp)
+                                Text(text = "🌐 ", fontSize = 10.sp)
                                 Text(
-                                    text = "AI",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    text = "AI Tarjimon",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }

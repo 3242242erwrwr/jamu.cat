@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -68,6 +67,7 @@ fun AiChatScreen(
 ) {
     val listState = rememberLazyListState()
     var messageText by rememberSaveable { mutableStateOf("") }
+    var selectedLanguage by rememberSaveable { mutableStateOf("🇬🇧 Inglizcha") }
     var isLoading by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
 
@@ -75,19 +75,25 @@ fun AiChatScreen(
         mutableStateListOf(
             ChatMessage(
                 id = "ai_welcome",
-                senderName = "JAMU AI",
-                text = "Salom! Men JAMU.chat AI Yordamchiman 🤖. Menga har qanday savolingizni berishingiz mumkin. Sizga qanday yordam bera olaman?",
+                senderName = "AI Tarjimon",
+                text = "Salom! Men JAMU.chat AI Universal Tarjimonman 🌐. Har qanday so'z, gap yoki matnni yozing — uni dunyodagi istalgan tilga mukammal tarjima qilib beraman!",
                 isCurrentUser = false,
                 timestamp = "AI"
             )
         )
     }
 
-    val suggestedQuestions = listOf(
-        "Dasturlash nima? 💻",
-        "Python va Kotlin farqi 🚀",
-        "Yaxshi maslahat ber 💡",
-        "Qiziqarli fakt ayt 🧠"
+    val targetLanguages = listOf(
+        "🇬🇧 Inglizcha",
+        "🇺🇿 O'zbekcha",
+        "🇷🇺 Ruscha",
+        "🇹🇷 Turkcha",
+        "🇸🇦 Arabcha",
+        "🇰🇷 Koreyscha",
+        "🇨🇳 Xitoycha",
+        "🇩🇪 Nemischa",
+        "🇫🇷 Fransuzcha",
+        "🇪🇸 Ispancha"
     )
 
     LaunchedEffect(aiMessages.size, isLoading) {
@@ -96,16 +102,18 @@ fun AiChatScreen(
         }
     }
 
-    fun handleSendPrompt(prompt: String) {
-        val trimmed = prompt.trim()
+    fun handleSendPrompt(inputPrompt: String) {
+        val trimmed = inputPrompt.trim()
         if (trimmed.isEmpty() || isLoading) return
 
         val userMsgId = java.util.UUID.randomUUID().toString()
+        val formattedPrompt = "Ushbu matnni/so'zni $selectedLanguage tiliga mukammal, aniq va tabiiy tarjima qilib ber: \"$trimmed\""
+
         aiMessages.add(
             ChatMessage(
                 id = userMsgId,
                 senderName = "Siz",
-                text = trimmed,
+                text = "$trimmed\n($selectedLanguage ga)",
                 isCurrentUser = true,
                 timestamp = "Hozir"
             )
@@ -114,13 +122,13 @@ fun AiChatScreen(
         messageText = ""
         isLoading = true
 
-        onSendAiPrompt(trimmed) { aiReply ->
+        onSendAiPrompt(formattedPrompt) { aiReply ->
             isLoading = false
             val aiMsgId = java.util.UUID.randomUUID().toString()
             aiMessages.add(
                 ChatMessage(
                     id = aiMsgId,
-                    senderName = "JAMU AI",
+                    senderName = "AI Tarjimon",
                     text = aiReply,
                     isCurrentUser = false,
                     timestamp = "AI"
@@ -132,8 +140,8 @@ fun AiChatScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("AI muloqotini tozalash?", fontWeight = FontWeight.Bold) },
-            text = { Text("Barcha AI savol-javoblar tarixi tozalanadi.") },
+            title = { Text("Tarjima tarixini tozalash?", fontWeight = FontWeight.Bold) },
+            text = { Text("Barcha AI tarjimalar tarixi tozalanadi.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -141,8 +149,8 @@ fun AiChatScreen(
                         aiMessages.add(
                             ChatMessage(
                                 id = "ai_welcome",
-                                senderName = "JAMU AI",
-                                text = "Muloqot tozalandi! Savolingiz bo'lsa beravering 🤖",
+                                senderName = "AI Tarjimon",
+                                text = "Tarjimalar tarixi tozalandi! Istalgan matnni yuboring 🌐",
                                 isCurrentUser = false,
                                 timestamp = "AI"
                             )
@@ -172,7 +180,7 @@ fun AiChatScreen(
             .imePadding()
             .navigationBarsPadding()
     ) {
-        // AI Header
+        // AI Tarjimon Header
         Surface(
             tonalElevation = 3.dp,
             shadowElevation = 6.dp,
@@ -199,14 +207,14 @@ fun AiChatScreen(
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("🤖", fontSize = 20.sp)
+                    Text("🌐", fontSize = 20.sp)
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "JAMU AI Assistant",
+                        text = "AI Universal Tarjimon",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
@@ -214,12 +222,58 @@ fun AiChatScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(JamuOnlineGreen))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Bepul AI (Onlayn)", fontSize = 10.sp, color = JamuOnlineGreen)
+                        Text("Dunyodagi Barcha Tillar", fontSize = 10.sp, color = JamuOnlineGreen)
                     }
                 }
 
                 IconButton(onClick = { showClearDialog = true }) {
                     Text("🗑", fontSize = 16.sp, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+
+        // Language Selector Row
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Text(
+                    text = "Qaysi tilga tarjima qilamiz? 👇",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                )
+
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(targetLanguages) { lang ->
+                        val isSelected = selectedLanguage == lang
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) TelegramBluePrimary else MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp),
+                            modifier = Modifier
+                                .then(
+                                    if (isSelected) Modifier.border(1.dp, neonBorder, RoundedCornerShape(16.dp))
+                                    else Modifier
+                                )
+                                .clickable { selectedLanguage = lang }
+                        ) {
+                            Text(
+                                text = lang,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -271,7 +325,7 @@ fun AiChatScreen(
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("🤖", fontSize = 14.sp)
+                                Text("🌐", fontSize = 14.sp)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Surface(
@@ -302,34 +356,9 @@ fun AiChatScreen(
                                 color = TelegramBluePrimary
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("AI javob tayyorlamoqda... 💭", fontSize = 11.sp, color = TelegramBluePrimary)
+                            Text("AI tarjima qilmoqda... 🌐", fontSize = 11.sp, color = TelegramBluePrimary)
                         }
                     }
-                }
-            }
-        }
-
-        // Suggested Questions Row
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            items(suggestedQuestions) { q ->
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    modifier = Modifier.clickable { handleSendPrompt(q) }
-                ) {
-                    Text(
-                        text = q,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
                 }
             }
         }
@@ -349,7 +378,7 @@ fun AiChatScreen(
                 OutlinedTextField(
                     value = messageText,
                     onValueChange = { messageText = it },
-                    placeholder = { Text("AI ga savol bering...", fontSize = 12.sp) },
+                    placeholder = { Text("Matn yoki so'z yozing ($selectedLanguage ga)...", fontSize = 11.sp) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(24.dp),
                     maxLines = 4,
