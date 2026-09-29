@@ -157,12 +157,8 @@ class MainActivity : ComponentActivity() {
                             if (selfStatus != null) {
                                 if (selfStatus.displayName.isNotBlank()) {
                                     currentUserDisplayName = selfStatus.displayName
-                                    userPrefs.saveDisplayName(selfStatus.displayName)
                                 }
-                                if (!selfStatus.profileImageUrl.isNullOrBlank()) {
-                                    currentUserProfileImageUrl = selfStatus.profileImageUrl
-                                    userPrefs.saveProfileImageUrl(selfStatus.profileImageUrl)
-                                }
+                                currentUserProfileImageUrl = selfStatus.profileImageUrl
                                 if (selfStatus.phoneNumber.isNotBlank()) {
                                     currentPhoneNumber = selfStatus.phoneNumber
                                     userPrefs.savePhoneNumber(selfStatus.phoneNumber)
