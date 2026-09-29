@@ -220,9 +220,32 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // Automatically fetch chat history for active user & all user list participants upon connecting
+                // Automatically sync profile & fetch chat history upon connecting
                 LaunchedEffect(isOnline, onlineUsersList.toList()) {
-                    if (isOnline) {
+                    if (isOnline && currentUserName.isNotBlank()) {
+                        val currentImg = currentUserProfileImageUrl
+                        if (!currentImg.isNullOrBlank()) {
+                            if (currentImg.startsWith("content://") || currentImg.startsWith("file://")) {
+                                uploadProfileImage(
+                                    context = context,
+                                    serverUrl = serverUrl,
+                                    imageUri = currentImg,
+                                    onSuccess = { remoteUrl ->
+                                        currentUserProfileImageUrl = remoteUrl
+                                        userPrefs.saveProfileImageUrl(remoteUrl)
+                                        wsClient.updateProfile(currentUserName, currentUserDisplayName, remoteUrl, currentPhoneNumber)
+                                    },
+                                    onError = { err ->
+                                        android.util.Log.e("JAMU_PROFILE", "Auto upload profile image error: $err")
+                                    }
+                                )
+                            } else if (currentImg.startsWith("http://") || currentImg.startsWith("https://")) {
+                                wsClient.updateProfile(currentUserName, currentUserDisplayName, currentImg, currentPhoneNumber)
+                            }
+                        } else {
+                            wsClient.updateProfile(currentUserName, currentUserDisplayName, "", currentPhoneNumber)
+                        }
+
                         onlineUsersList.forEach { u ->
                             if (!u.name.trim().equals(currentUserName.trim(), ignoreCase = true)) {
                                 wsClient.fetchHistory(u.name)
