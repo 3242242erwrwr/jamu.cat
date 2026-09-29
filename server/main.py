@@ -327,22 +327,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str
                         print(f"[Profile Update] '{username}' -> Display: '{display_name}', Phone: '{phone_number}'")
                         await manager.broadcast_user_list()
 
-                elif msg_type in ["video_call_offer", "video_call_answer", "video_call_reject", "video_call_end"]:
-                    receiver = data.get("receiver")
-                    if receiver:
-                        receiver_ws = manager.get_socket(receiver)
-                        if receiver_ws:
-                            try:
-                                await receiver_ws.send_text(data_text)
-                            except Exception:
-                                pass
-                        elif msg_type == "video_call_offer":
-                            manager.send_fcm_push(
-                                receiver=receiver,
-                                sender=username,
-                                message="📹 Senga video qo'ng'iroq qilmoqda..."
-                            )
-
                 elif msg_type == "fetch_history":
                     target_user = data.get("target_user")
                     if target_user:

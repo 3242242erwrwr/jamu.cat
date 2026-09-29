@@ -31,10 +31,6 @@ class ChatWebSocketClient(
     private val onPrivateMessageReceived: (sender: String, receiver: String, message: String, imageUrl: String?, timestamp: String) -> Unit,
     private val onChatHistoryReceived: (targetUser: String, messages: List<com.example.jamuchat.ChatMessage>) -> Unit,
     private val onChatHistoryCleared: (targetUser: String) -> Unit = {},
-    private val onVideoCallOfferReceived: (sender: String) -> Unit = {},
-    private val onVideoCallAnswerReceived: (sender: String) -> Unit = {},
-    private val onVideoCallRejectedReceived: (sender: String) -> Unit = {},
-    private val onVideoCallEndedReceived: (sender: String) -> Unit = {},
     private val onNameTaken: () -> Unit = {},
     private val onErrorOccurred: (errorMsg: String) -> Unit
 ) {
@@ -221,26 +217,6 @@ class ChatWebSocketClient(
                             mainHandler.post {
                                 onChatHistoryCleared(targetUser)
                             }
-                        }
-
-                        "video_call_offer" -> {
-                            val sender = json.optString("sender")
-                            mainHandler.post { onVideoCallOfferReceived(sender) }
-                        }
-
-                        "video_call_answer" -> {
-                            val sender = json.optString("sender")
-                            mainHandler.post { onVideoCallAnswerReceived(sender) }
-                        }
-
-                        "video_call_reject" -> {
-                            val sender = json.optString("sender")
-                            mainHandler.post { onVideoCallRejectedReceived(sender) }
-                        }
-
-                        "video_call_end" -> {
-                            val sender = json.optString("sender")
-                            mainHandler.post { onVideoCallEndedReceived(sender) }
                         }
 
                         "error" -> {
