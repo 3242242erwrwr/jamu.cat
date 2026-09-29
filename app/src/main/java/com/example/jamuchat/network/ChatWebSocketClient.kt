@@ -30,12 +30,14 @@ class ChatWebSocketClient(
     private val onPrivateMessageReceived: (sender: String, receiver: String, message: String, imageUrl: String?, timestamp: String) -> Unit,
     private val onChatHistoryReceived: (targetUser: String, messages: List<com.example.jamuchat.ChatMessage>) -> Unit,
     private val onChatHistoryCleared: (targetUser: String) -> Unit = {},
+    private val onNameTaken: () -> Unit = {},
     private val onErrorOccurred: (errorMsg: String) -> Unit
 ) {
     private var webSocket: WebSocket? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var currentUsername: String = ""
     private var currentBaseUrl: String = ""
+    private var currentDeviceId: String = ""
     private var isIntentionallyClosed: Boolean = false
     private var pingRunnable: Runnable? = null
 
@@ -70,9 +72,10 @@ class ChatWebSocketClient(
         pingRunnable = null
     }
 
-    fun connect(baseUrl: String, username: String) {
+    fun connect(baseUrl: String, username: String, deviceId: String) {
         currentUsername = username
         currentBaseUrl = baseUrl
+        currentDeviceId = deviceId
         isIntentionallyClosed = false
 
         var formatted = baseUrl.trim().trimEnd('/')
@@ -95,7 +98,7 @@ class ChatWebSocketClient(
             username.trim()
         }
 
-        val wsUrl = "$cleanBase/ws/$encodedUsername"
+        val wsUrl = "$cleanBase/ws/$encodedUsername/$deviceId"
         Log.d("JAMU_WS", "WebSocket connecting: $wsUrl")
 
         val request = Request.Builder()
@@ -200,6 +203,12 @@ class ChatWebSocketClient(
                                 onChatHistoryCleared(targetUser)
                             }
                         }
+
+                        "error" -> {
+                            if (json.optString("message") == "NAME_TAKEN") {
+                                mainHandler.post { onNameTaken() }
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e("JAMU_WS", "JSON parsing error: ${e.message}")
@@ -233,7 +242,7 @@ class ChatWebSocketClient(
             mainHandler.postDelayed({
                 if (!isIntentionallyClosed) {
                     Log.d("JAMU_WS", "Auto-reconnecting to WebSocket...")
-                    connect(currentBaseUrl, currentUsername)
+                    connect(currentBaseUrl, currentUsername, currentDeviceId)
                 }
             }, 2000)
         }

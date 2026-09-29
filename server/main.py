@@ -110,10 +110,8 @@ class ConnectionManager:
         return self.active_users.get(username.strip().lower())
 
     async def connect(self, username: str, websocket: WebSocket):
-        await websocket.accept()
         clean_name = username.strip()
         key = clean_name.lower()
-        register_user(clean_name)
         self.active_users[key] = websocket
         print(f"[+] '{clean_name}' online bo'ldi. Total Online: {len(self.active_users)}")
         await self.broadcast_user_list()
@@ -239,7 +237,14 @@ async def root():
 
 @app.websocket("/ws/{username}")
 @app.websocket("/ws/{username}/")
-async def websocket_endpoint(websocket: WebSocket, username: str):
+@app.websocket("/ws/{username}/{device_id}")
+async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str = ""):
+    await websocket.accept()
+    if not register_user(username, device_id):
+        await websocket.send_text(json.dumps({"type": "error", "message": "NAME_TAKEN"}))
+        await websocket.close(code=1008)
+        return
+
     await manager.connect(username, websocket)
     try:
         while True:

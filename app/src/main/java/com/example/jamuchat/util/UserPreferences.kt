@@ -10,7 +10,17 @@ class UserPreferences(context: Context) {
     companion object {
         private const val KEY_USERNAME = "KEY_USERNAME"
         private const val KEY_SERVER_URL = "KEY_SERVER_URL"
+        private const val KEY_DEVICE_ID = "KEY_DEVICE_ID"
         private const val DEFAULT_SERVER_URL = "https://jamu-cat.onrender.com"
+    }
+
+    fun getDeviceId(): String {
+        var id = prefs.getString(KEY_DEVICE_ID, null)
+        if (id == null) {
+            id = java.util.UUID.randomUUID().toString()
+            prefs.edit().putString(KEY_DEVICE_ID, id).apply()
+        }
+        return id
     }
 
     fun saveUsername(username: String) {
@@ -44,6 +54,10 @@ class UserPreferences(context: Context) {
             return DEFAULT_SERVER_URL
         }
         return saved
+    }
+
+    fun clearUsername() {
+        prefs.edit().remove(KEY_USERNAME).apply()
     }
 
     fun clear() {

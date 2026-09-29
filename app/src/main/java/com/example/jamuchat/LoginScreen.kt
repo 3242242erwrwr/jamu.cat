@@ -36,6 +36,7 @@ import com.example.jamuchat.ui.theme.JamuchatTheme
 fun LoginScreen(
     initialUsername: String = "",
     initialServerUrl: String = "https://jamu-cat.onrender.com",
+    nameTakenError: String? = null,
     onLoginSuccess: (username: String, serverUrl: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -93,9 +94,14 @@ fun LoginScreen(
                     placeholder = { Text("Ismingizni kiriting...") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    isError = isError,
+                    isError = isError || nameTakenError != null,
                     supportingText = {
-                        if (isError && nameInput.isEmpty()) {
+                        if (nameTakenError != null) {
+                            Text(
+                                text = nameTakenError,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else if (isError && nameInput.isEmpty()) {
                             Text(
                                 text = "Iltimos, ismingizni kiriting!",
                                 color = MaterialTheme.colorScheme.error

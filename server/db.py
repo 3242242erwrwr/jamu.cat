@@ -28,6 +28,8 @@ def init_db():
         cursor.execute("ALTER TABLE users ADD COLUMN profile_image_url TEXT")
     if "last_seen" not in columns:
         cursor.execute("ALTER TABLE users ADD COLUMN last_seen TEXT")
+    if "device_id" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN device_id TEXT")
 
     # Barcha private chat xabarlari (Chat tarixi)
     cursor.execute("""
@@ -45,19 +47,29 @@ def init_db():
     conn.commit()
     conn.close()
 
-def register_user(username: str):
+def register_user(username: str, device_id: str = "") -> bool:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     clean = username.strip()
-    cursor.execute("SELECT username FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
+
+    # Check if the exact lowercased username already has a device_id assigned
+    cursor.execute("SELECT device_id FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
     row = cursor.fetchone()
+
     if row:
-        existing_uname = row[0]
-        cursor.execute("UPDATE users SET display_name = ? WHERE username = ?", (clean, existing_uname))
+        existing_device = row[0]
+        # If there's an existing device_id and it's different from the current one, reject!
+        if existing_device and existing_device.strip() and existing_device != device_id:
+            conn.close()
+            return False
+
+        cursor.execute("UPDATE users SET display_name = ?, device_id = ? WHERE LOWER(username) = LOWER(?)", (clean, device_id, clean))
     else:
-        cursor.execute("INSERT INTO users (username, display_name) VALUES (?, ?)", (clean, clean))
+        cursor.execute("INSERT INTO users (username, display_name, device_id) VALUES (?, ?, ?)", (clean, clean, device_id))
+
     conn.commit()
     conn.close()
+    return True
 
 def update_user_profile(username: str, display_name: str, profile_image_url: str):
     conn = sqlite3.connect(DB_PATH)

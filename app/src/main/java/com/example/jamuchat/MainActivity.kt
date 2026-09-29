@@ -84,6 +84,9 @@ class MainActivity : ComponentActivity() {
                 var currentUserProfileImageUrl by remember { mutableStateOf<String?>(null) }
                 var selectedPrivateUser by remember { mutableStateOf<String?>(null) }
 
+                var nameTakenError by remember { mutableStateOf<String?>(null) }
+                val deviceId = remember { userPrefs.getDeviceId() }
+
                 var serverUrl by remember { mutableStateOf(userPrefs.getServerUrl()) }
 
                 var isOnline by remember { mutableStateOf(false) }
@@ -184,6 +187,12 @@ class MainActivity : ComponentActivity() {
                         onChatHistoryCleared = { targetUser ->
                             privateMessagesMap[targetUser]?.clear()
                         },
+                        onNameTaken = {
+                            currentScreen = Screen.Login
+                            nameTakenError = "Bu ism boshqa qurilmada band! Boshqa ism kiriting."
+                            userPrefs.clearUsername()
+                            currentUserName = ""
+                        },
                         onErrorOccurred = { error ->
                             errorMessage = error
                         }
@@ -211,12 +220,13 @@ class MainActivity : ComponentActivity() {
                 }
 
                 fun connectToServer(name: String, url: String) {
+                    nameTakenError = null
                     currentUserName = name
                     currentUserDisplayName = name
                     serverUrl = url
                     userPrefs.saveUsername(name)
                     userPrefs.saveServerUrl(url)
-                    wsClient.connect(url, name)
+                    wsClient.connect(url, name, deviceId)
 
                     try {
                         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
@@ -247,6 +257,7 @@ class MainActivity : ComponentActivity() {
                             LoginScreen(
                                 initialUsername = currentUserName,
                                 initialServerUrl = serverUrl,
+                                nameTakenError = nameTakenError,
                                 onLoginSuccess = { userName, inputUrl ->
                                     connectToServer(userName, inputUrl)
                                     currentScreen = Screen.MainChat
