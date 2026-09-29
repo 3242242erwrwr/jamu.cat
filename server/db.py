@@ -26,6 +26,8 @@ def init_db():
         cursor.execute("ALTER TABLE users ADD COLUMN display_name TEXT")
     if "profile_image_url" not in columns:
         cursor.execute("ALTER TABLE users ADD COLUMN profile_image_url TEXT")
+    if "last_seen" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN last_seen TEXT")
 
     # Barcha private chat xabarlari (Chat tarixi)
     cursor.execute("""
@@ -66,6 +68,13 @@ def update_user_profile(username: str, display_name: str, profile_image_url: str
     conn.commit()
     conn.close()
 
+def update_last_seen(username: str, last_seen: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET last_seen = ? WHERE LOWER(username) = LOWER(?)", (last_seen, username.strip()))
+    conn.commit()
+    conn.close()
+
 def save_fcm_token(username: str, fcm_token: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -84,7 +93,7 @@ def get_fcm_token(username: str) -> str:
 def get_all_registered_users() -> List[Dict]:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT username, display_name, profile_image_url FROM users ORDER BY username ASC")
+    cursor.execute("SELECT username, display_name, profile_image_url, last_seen FROM users ORDER BY username ASC")
     rows = cursor.fetchall()
     conn.close()
 
@@ -100,7 +109,8 @@ def get_all_registered_users() -> List[Dict]:
         result.append({
             "username": r[0],
             "display_name": r[1] or r[0],
-            "profile_image_url": pimg
+            "profile_image_url": pimg,
+            "last_seen": r[3] or ""
         })
     return result
 

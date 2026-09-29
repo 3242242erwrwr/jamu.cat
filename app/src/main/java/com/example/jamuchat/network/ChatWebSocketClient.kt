@@ -127,12 +127,14 @@ class ChatWebSocketClient(
                                         val uName = item.optString("name")
                                         val dName = item.optString("display_name").takeIf { it.isNotEmpty() } ?: uName
                                         val pImg = item.optString("profile_image_url").takeIf { it.isNotEmpty() }
+                                        val lSeen = item.optString("last_seen", "")
                                         userStatusList.add(
                                             UserStatus(
                                                 name = uName,
                                                 displayName = dName,
                                                 profileImageUrl = pImg,
-                                                isOnline = item.optBoolean("is_online", false)
+                                                isOnline = item.optBoolean("is_online", false),
+                                                lastSeen = lSeen
                                             )
                                         )
                                     } else {
@@ -142,7 +144,8 @@ class ChatWebSocketClient(
                                                 name = nameStr,
                                                 displayName = nameStr,
                                                 profileImageUrl = null,
-                                                isOnline = true
+                                                isOnline = true,
+                                                lastSeen = ""
                                             )
                                         )
                                     }

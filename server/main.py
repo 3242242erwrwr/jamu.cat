@@ -12,7 +12,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from db import init_db, register_user, update_user_profile, save_fcm_token, get_fcm_token, get_all_registered_users, save_message, get_chat_history, delete_chat_history
+from db import init_db, register_user, update_user_profile, save_fcm_token, get_fcm_token, get_all_registered_users, save_message, get_chat_history, delete_chat_history, update_last_seen
+import time
 
 init_db()
 
@@ -120,10 +121,11 @@ class ConnectionManager:
     def disconnect(self, username: str, websocket: WebSocket = None):
         key = username.strip().lower()
         if key in self.active_users:
-            # Safe disconnect: ONLY disconnect if the disconnecting websocket matches current active websocket!
             if websocket is None or self.active_users[key] == websocket:
                 del self.active_users[key]
                 print(f"[-] '{username}' offline bo'ldi. Total Online: {len(self.active_users)}")
+                now_ts = str(int(time.time() * 1000))
+                update_last_seen(key, now_ts)
             else:
                 print(f"[-] Stale websocket disconnect ignored for '{username}'")
 
@@ -136,7 +138,8 @@ class ConnectionManager:
                 "name": uname,
                 "display_name": u["display_name"] or uname,
                 "profile_image_url": u["profile_image_url"],
-                "is_online": self.is_online(uname)
+                "is_online": self.is_online(uname),
+                "last_seen": u.get("last_seen", "")
             })
 
         payload = json.dumps({
