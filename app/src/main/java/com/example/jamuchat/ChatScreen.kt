@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -595,19 +596,36 @@ fun PrivateChatScreen(
                     )
                 }
 
-                IconButton(onClick = {
-                    if (targetPhoneNumber.isNotBlank()) {
-                        onCallUser(targetPhoneNumber)
-                    } else {
-                        showNoPhoneDialog = true
-                    }
-                }) {
+                // Glowing Green Neon Call Button
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (targetPhoneNumber.isNotBlank()) Color(0xFF00E676).copy(alpha = 0.25f)
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .border(
+                            1.5.dp,
+                            if (targetPhoneNumber.isNotBlank()) Color(0xFF00E676) else Color.Gray.copy(alpha = 0.4f),
+                            CircleShape
+                        )
+                        .clickable {
+                            if (targetPhoneNumber.isNotBlank()) {
+                                onCallUser(targetPhoneNumber)
+                            } else {
+                                showNoPhoneDialog = true
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = "📞",
-                        fontSize = 16.sp,
-                        color = if (targetPhoneNumber.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        fontSize = 16.sp
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 IconButton(onClick = { showClearDialog = true }) {
                     Text(
