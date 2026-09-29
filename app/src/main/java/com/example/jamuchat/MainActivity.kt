@@ -106,27 +106,35 @@ class MainActivity : ComponentActivity() {
                     mutableStateMapOf<String, MutableList<ChatMessage>>()
                 }
 
-                val permissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-                ) { isGranted ->
-                    if (!isGranted) {
+                val mediaPermissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestMultiplePermissions()
+                ) { permissions ->
+                    val cameraGranted = permissions[Manifest.permission.CAMERA] ?: false
+                    val audioGranted = permissions[Manifest.permission.RECORD_AUDIO] ?: false
+                    if (!cameraGranted || !audioGranted) {
                         Toast.makeText(
                             context,
-                            "JAMU.chat xabarlar haqida bildirishnoma yuborishi uchun ruxsat kerak",
-                            Toast.LENGTH_SHORT
+                            "Video qo'ng'iroq uchun Kamera va Mikrofon ruxsatlari kerak!",
+                            Toast.LENGTH_LONG
                         ).show()
                     }
                 }
 
                 LaunchedEffect(Unit) {
+                    val requiredPermissions = mutableListOf<String>()
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                        requiredPermissions.add(Manifest.permission.CAMERA)
+                    }
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        requiredPermissions.add(Manifest.permission.RECORD_AUDIO)
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        if (ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            requiredPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
                         }
+                    }
+                    if (requiredPermissions.isNotEmpty()) {
+                        mediaPermissionLauncher.launch(requiredPermissions.toTypedArray())
                     }
                 }
 

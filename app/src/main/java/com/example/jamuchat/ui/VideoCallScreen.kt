@@ -1,5 +1,11 @@
 package com.example.jamuchat.ui
 
+import android.content.Context
+import android.media.AudioManager
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -27,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,11 +43,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import com.example.jamuchat.ui.components.JamuAvatar
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 @Composable
 fun VideoCallScreen(
@@ -51,11 +62,46 @@ fun VideoCallScreen(
     onEndCall: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     var isMuted by remember { mutableStateOf(false) }
     var isCameraOff by remember { mutableStateOf(false) }
     var isFrontCamera by remember { mutableStateOf(true) }
     var callDurationSeconds by remember { mutableStateOf(0) }
 
+    // Configure Audio hardware for VoIP Call
+    DisposableEffect(Unit) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        val originalMode = audioManager?.mode ?: AudioManager.MODE_NORMAL
+        val isSpeakerOn = audioManager?.isSpeakerphoneOn ?: false
+
+        try {
+            audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
+            audioManager?.isSpeakerphoneOn = true
+            audioManager?.isMicrophoneMute = isMuted
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        onDispose {
+            try {
+                audioManager?.mode = originalMode
+                audioManager?.isSpeakerphoneOn = isSpeakerOn
+                audioManager?.isMicrophoneMute = false
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Toggle Microphone Mute State
+    LaunchedEffect(isMuted) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        audioManager?.isMicrophoneMute = isMuted
+    }
+
+    // Call duration timer
     LaunchedEffect(callStatus) {
         if (callStatus == "connected") {
             while (true) {
@@ -68,7 +114,7 @@ fun VideoCallScreen(
     fun formatDuration(seconds: Int): String {
         val mins = seconds / 60
         val secs = seconds % 60
-        return String.format("%02d:%02d", mins, secs)
+        return String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
     }
 
     val neonBorder = Brush.sweepGradient(
@@ -85,7 +131,7 @@ fun VideoCallScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // Fullscreen Remote User View Container
+        // Fullscreen Remote User Container
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -131,7 +177,7 @@ fun VideoCallScreen(
             )
         }
 
-        // Floating Small Local Camera Preview (Top Right)
+        // Live Floating Local Camera Preview (Top Right)
         AnimatedVisibility(
             visible = callStatus != "ended",
             enter = fadeIn(),
@@ -145,7 +191,7 @@ fun VideoCallScreen(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 modifier = Modifier
-                    .size(width = 100.dp, height = 140.dp)
+                    .size(width = 110.dp, height = 150.dp)
                     .border(1.5.dp, neonBorder, RoundedCornerShape(16.dp))
             ) {
                 Box(
@@ -155,14 +201,41 @@ fun VideoCallScreen(
                     if (isCameraOff) {
                         Text("📷 O'chiq", fontSize = 11.sp, color = Color.Gray)
                     } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text("📹 Siz", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(if (isFrontCamera) "Oldi camera" else "Orqa camera", fontSize = 9.sp, color = Color(0xFF00E5FF))
-                        }
+                        // Live CameraX Preview
+                        AndroidView(
+                            factory = { ctx ->
+                                PreviewView(ctx).apply {
+                                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                                }
+                            },
+                            update = { previewView ->
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+                                cameraProviderFuture.addListener({
+                                    try {
+                                        val cameraProvider = cameraProviderFuture.get()
+                                        val preview = Preview.Builder().build().also {
+                                            it.setSurfaceProvider(previewView.surfaceProvider)
+                                        }
+
+                                        val cameraSelector = if (isFrontCamera) {
+                                            CameraSelector.DEFAULT_FRONT_CAMERA
+                                        } else {
+                                            CameraSelector.DEFAULT_BACK_CAMERA
+                                        }
+
+                                        cameraProvider.unbindAll()
+                                        cameraProvider.bindToLifecycle(
+                                            lifecycleOwner,
+                                            cameraSelector,
+                                            preview
+                                        )
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }, ContextCompat.getMainExecutor(context))
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
             }
