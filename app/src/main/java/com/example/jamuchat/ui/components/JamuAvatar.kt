@@ -9,6 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +49,8 @@ fun JamuAvatar(
         )
     )
 
+    var isImageError by remember(imageUrl) { mutableStateOf(false) }
+
     Box(
         modifier = modifier
             .size(size)
@@ -56,10 +62,11 @@ fun JamuAvatar(
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (!imageUrl.isNullOrBlank() && imageUrl != "null") {
+        if (!imageUrl.isNullOrBlank() && imageUrl != "null" && !isImageError) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = "Profil rasmi",
+                onError = { isImageError = true },
                 modifier = Modifier
                     .size(size)
                     .clip(CircleShape),
@@ -79,7 +86,7 @@ fun JamuAvatar(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = name.take(1).uppercase(),
+                    text = name.take(1).ifBlank { "J" }.uppercase(),
                     color = Color.White,
                     fontSize = fontSize.sp,
                     fontWeight = FontWeight.Bold

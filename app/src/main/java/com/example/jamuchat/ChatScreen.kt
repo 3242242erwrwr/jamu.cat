@@ -304,11 +304,11 @@ fun UserListScreen(
                             .padding(2.dp)
                     ) {
                         JamuAvatar(
-                            name = currentUserDisplayName.ifBlank { currentUserName },
+                            name = currentUserDisplayName.ifBlank { currentUserName.ifBlank { "JAMU" } },
                             imageUrl = currentUserProfileImageUrl,
                             isSelf = true,
-                            size = 28.dp,
-                            fontSize = 11
+                            size = 32.dp,
+                            fontSize = 13
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
