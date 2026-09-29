@@ -3,16 +3,28 @@ package com.example.jamuchat.ui.components
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -29,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +66,15 @@ fun JamuMessageInput(
 ) {
     var messageText by rememberSaveable { mutableStateOf("") }
     var selectedImageUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var showEmojiPicker by remember { mutableStateOf(false) }
+
+    val popularEmojis = remember {
+        listOf(
+            "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "🤥", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "🤯", "🤠", "🥳", "😎", "🤓", "🧐", "😕", "😟", "🙁", "😮", "😯", "😲", "😳", "🥺", "😦", "😧", "😨", "😰", "😥", "😢", "😭", "😱", "😖", "😣", "😞", "😓", "😩", "😫", "🥱", "😤", "😡", "😠", "🤬",
+            "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "👍", "👎", "👊", "✊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✌️", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "🖐️", "✋", "🖖",
+            "🔥", "💥", "💫", "💦", "💨", "🌟", "✨", "⚡", "🎃", "🎄", "🎈", "🎉", "🎊", "👑", "🏆", "🥇", "🥈", "🥉", "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🎱", "🧿", "🎮", "🎯", "🎲", "🧩", "🎨", "🎭", "🎬", "🎤", "🎧", "🎼", "🎵", "🎶"
+        )
+    }
 
     LaunchedEffect(messageText) {
         if (messageText.trim().isNotEmpty()) {
@@ -79,6 +101,7 @@ fun JamuMessageInput(
             onSendMessage(trimmed, img)
             messageText = ""
             selectedImageUri = null
+            showEmojiPicker = false
             onTypingChanged(false)
         }
     }
@@ -125,17 +148,24 @@ fun JamuMessageInput(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { imagePickerLauncher.launch("image/*") },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Text(text = "📎", fontSize = 20.sp)
+                    Text(text = "📎", fontSize = 18.sp)
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                IconButton(
+                    onClick = { showEmojiPicker = !showEmojiPicker },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Text(text = if (showEmojiPicker) "⌨️" else "😊", fontSize = 18.sp)
+                }
+
+                Spacer(modifier = Modifier.width(2.dp))
 
                 OutlinedTextField(
                     value = messageText,
@@ -172,6 +202,40 @@ fun JamuMessageInput(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = showEmojiPicker,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 36.dp),
+                        contentPadding = PaddingValues(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(popularEmojis) { emoji ->
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        messageText += emoji
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = emoji, fontSize = 20.sp)
+                            }
+                        }
+                    }
                 }
             }
         }
