@@ -141,30 +141,27 @@ async def generate_ai_response(prompt: str) -> str:
         except Exception as e:
             print(f"[AI Gemini Error] {e}")
 
-    # 2. Try Free Public DeepSeek / Llama API Proxies
+    # 2. Try Pollinations GET AI Query
     try:
-        url = "https://text.pollinations.ai/"
-        payload = json.dumps({
-            "messages": [
-                {"role": "system", "content": "Siz JAMU.chat aqlli AI yordamchisiz. Har qanday savolga o'zbek tilida chuqur, aniq, mantiqli va to'liq javob bering."},
-                {"role": "user", "content": clean_prompt}
-            ],
-            "jsonMode": False
-        }).encode('utf-8')
-        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
+        url = "https://text.pollinations.ai/" + urllib.parse.quote(f"{clean_prompt} (Javobni o'zbek tilida, chuqur va aniq ber)")
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-        def fetch_free_ai():
-            with urllib.request.urlopen(req, timeout=10) as resp:
+        def fetch_pollinations():
+            import ssl
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
                 txt = resp.read().decode('utf-8').strip()
                 if txt and len(txt) > 2 and "404" not in txt and "Payment" not in txt:
                     return txt
                 return None
 
-        free_reply = await asyncio.to_thread(fetch_free_ai)
-        if free_reply:
-            return free_reply
+        p_reply = await asyncio.to_thread(fetch_pollinations)
+        if p_reply:
+            return p_reply
     except Exception as e:
-        print(f"[AI Free API Error] {e}")
+        print(f"[AI Pollinations Error] {e}")
 
     # 3. Highly Intelligent Fallback AI Expert Engine (Uzbek language)
     lower = clean_prompt.lower()
