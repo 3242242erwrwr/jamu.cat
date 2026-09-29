@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-09-28T19:24:27.657644100Z">
+        <DropdownSelection timestamp="2026-09-29T13:07:56.534694100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=AJJJ6R3804001698" />
+              <DeviceId pluginId="Default" identifier="serial=192.168.100.200:5555;connection=2ac3a7e8" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -19,6 +19,13 @@
       </SelectionState>
       <SelectionState runConfigName="LoginScreenPreview">
         <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2026-09-29T13:07:56.534694100Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="Default" identifier="serial=192.168.100.200:5555;connection=2ac3a7e8" />
+            </handle>
+          </Target>
+        </DropdownSelection>
         <DialogSelection />
       </SelectionState>
     </selectionStates>

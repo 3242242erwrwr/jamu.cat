@@ -43,6 +43,26 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")), name="uploads")
 
+# Download directory setup for APK downloads
+DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "download")
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+app.mount("/download", StaticFiles(directory=DOWNLOAD_DIR), name="download")
+
+
+@app.get("/version.json")
+async def get_version_json():
+    version_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "version.json")
+    if os.path.exists(version_path):
+        with open(version_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "versionCode": 1,
+        "versionName": "1.0",
+        "apkUrl": "https://jamu-cat.onrender.com/download/jamuchat.apk",
+        "forceUpdate": False
+    }
+
 
 @app.post("/users/profile-image")
 async def upload_profile_image(request: Request, file: UploadFile = File(...)):
