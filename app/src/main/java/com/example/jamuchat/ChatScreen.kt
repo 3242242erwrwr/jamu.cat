@@ -92,7 +92,6 @@ fun MainChatScreen(
     onClearHistory: (targetUser: String) -> Unit,
     onRefreshChat: (targetUser: String) -> Unit,
     onDeleteUserPermanently: (targetUser: String) -> Unit,
-    onOpenAiChat: () -> Unit,
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -188,7 +187,6 @@ fun MainChatScreen(
             onReconnect = onReconnect,
             onUserClick = onUserClick,
             onOpenProfile = { showProfileDialog = true },
-            onOpenAiChat = onOpenAiChat,
             onUserLongClick = { user -> userToDelete = user },
             modifier = Modifier
                 .weight(0.35f)
@@ -259,7 +257,6 @@ fun UserListScreen(
     errorMessage: String?,
     onReconnect: () -> Unit,
     onOpenProfile: () -> Unit,
-    onOpenAiChat: () -> Unit,
     onUserLongClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     onUserClick: (String) -> Unit = {}
@@ -311,44 +308,16 @@ fun UserListScreen(
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Modern Glowing AI Tarjimon Button
-                        Surface(
-                            onClick = onOpenAiChat,
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.5.dp,
-                                Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0xFF3B82F6), Color(0xFFA855F7)))
-                            ),
-                            shadowElevation = 4.dp,
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                            ) {
-                                Text(text = "🌐 ", fontSize = 10.sp)
-                                Text(
-                                    text = "AI Tarjimon",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = { onOpenProfile() },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Text(
-                                text = "⋮",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                    IconButton(
+                        onClick = { onOpenProfile() },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Text(
+                            text = "⋮",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
 
