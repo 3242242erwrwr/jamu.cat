@@ -327,6 +327,16 @@ async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str
                         print(f"[Profile Update] '{username}' -> Display: '{display_name}', Phone: '{phone_number}'")
                         await manager.broadcast_user_list()
 
+                elif msg_type == "user_typing":
+                    receiver = data.get("receiver")
+                    if receiver:
+                        receiver_ws = manager.get_socket(receiver)
+                        if receiver_ws:
+                            try:
+                                await receiver_ws.send_text(data_text)
+                            except Exception:
+                                pass
+
                 elif msg_type == "fetch_history":
                     target_user = data.get("target_user")
                     if target_user:

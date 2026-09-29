@@ -290,6 +290,18 @@ class ChatWebSocketClient(
         webSocket?.send(json.toString())
     }
 
+    fun sendTypingStatus(receiver: String, isTyping: Boolean) {
+        if (receiver.isNotBlank()) {
+            val json = JSONObject().apply {
+                put("type", "user_typing")
+                put("sender", currentUsername)
+                put("receiver", receiver)
+                put("is_typing", isTyping)
+            }
+            webSocket?.send(json.toString())
+        }
+    }
+
     fun sendVideoCallOffer(receiver: String) {
         val json = JSONObject().apply {
             put("type", "video_call_offer")

@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
                 val privateMessagesMap = remember {
                     mutableStateMapOf<String, MutableList<ChatMessage>>()
                 }
+                val typingUsersMap = remember { mutableStateMapOf<String, Boolean>() }
 
                 val mediaPermissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -319,6 +320,12 @@ class MainActivity : ComponentActivity() {
                                 privateMessagesMap = privateMessagesMap,
                                 isOnline = isOnline,
                                 errorMessage = errorMessage,
+                                typingUsersMap = typingUsersMap,
+                                onTypingChanged = { targetUser, isTyping ->
+                                    if (targetUser.isNotBlank()) {
+                                        wsClient.sendTypingStatus(targetUser, isTyping)
+                                    }
+                                },
                                 onReconnect = {
                                     if (currentUserName.isNotEmpty()) {
                                         connectToServer(currentUserName, currentPhoneNumber, serverUrl)

@@ -62,6 +62,7 @@ import com.example.jamuchat.ui.components.JamuProfileDialog
 import com.example.jamuchat.ui.components.JamuUserItem
 import com.example.jamuchat.ui.theme.JamuOfflineRed
 import com.example.jamuchat.ui.theme.JamuOnlineGreen
+import com.example.jamuchat.ui.theme.TelegramBluePrimary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,6 +96,8 @@ fun MainChatScreen(
     onRefreshChat: (targetUser: String) -> Unit,
     onDeleteUserPermanently: (targetUser: String) -> Unit,
     onCallUser: (phoneNumber: String) -> Unit,
+    typingUsersMap: Map<String, Boolean> = emptyMap(),
+    onTypingChanged: (targetUser: String, isTyping: Boolean) -> Unit = { _, _ -> },
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -466,11 +469,13 @@ fun PrivateChatScreen(
     targetProfileImageUrl: String?,
     targetLastSeen: String,
     targetPhoneNumber: String = "",
+    isTargetTyping: Boolean = false,
     messagesList: List<ChatMessage>,
     isTargetOnline: Boolean,
     isClientOnline: Boolean,
     showBackButton: Boolean = false,
     onSendMessage: (text: String, imageUrl: String?) -> Unit,
+    onTypingChanged: (isTyping: Boolean) -> Unit = {},
     onClearHistory: () -> Unit,
     onRefreshChat: () -> Unit,
     onCallUser: (phone: String) -> Unit = {},
@@ -587,12 +592,13 @@ fun PrivateChatScreen(
                         overflow = TextOverflow.Ellipsis
                     )
                     
-                    val statusText = if (isTargetOnline) "🟢 Online" else "🔴 " + com.example.jamuchat.ui.components.formatLastSeen(targetLastSeen)
+                    val statusText = if (isTargetTyping) "✍️ Senga xabar yozyapti..." else if (isTargetOnline) "🟢 Online" else "🔴 " + com.example.jamuchat.ui.components.formatLastSeen(targetLastSeen)
                     Text(
                         text = statusText,
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 9.sp,
-                        color = if (isTargetOnline) JamuOnlineGreen else JamuOfflineRed
+                        fontWeight = if (isTargetTyping) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isTargetTyping) TelegramBluePrimary else if (isTargetOnline) JamuOnlineGreen else JamuOfflineRed
                     )
                 }
 

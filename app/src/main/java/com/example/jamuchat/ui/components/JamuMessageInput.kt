@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,15 +42,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.jamuchat.ui.theme.TelegramBluePrimary
+import kotlinx.coroutines.delay
 
 @Composable
 fun JamuMessageInput(
     isOnline: Boolean,
     onSendMessage: (text: String, imageUrl: String?) -> Unit,
+    onTypingChanged: (isTyping: Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var messageText by rememberSaveable { mutableStateOf("") }
     var selectedImageUri by rememberSaveable { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(messageText) {
+        if (messageText.trim().isNotEmpty()) {
+            onTypingChanged(true)
+            delay(3000)
+            onTypingChanged(false)
+        } else {
+            onTypingChanged(false)
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -66,6 +79,7 @@ fun JamuMessageInput(
             onSendMessage(trimmed, img)
             messageText = ""
             selectedImageUri = null
+            onTypingChanged(false)
         }
     }
 
