@@ -45,10 +45,12 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val contentText = if (messageText.isNotBlank()) messageText else "🖼 Rasm yubordi"
+
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("JAMU.chat • $senderName")
-            .setContentText(messageText)
+            .setContentTitle("📩 Senga xabar keldi: $senderName")
+            .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

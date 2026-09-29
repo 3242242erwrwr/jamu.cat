@@ -187,14 +187,16 @@ class ConnectionManager:
             import firebase_admin
             from firebase_admin import messaging
 
+            push_text = message if message else "🖼 Rasm yubordi"
+
             fcm_msg = messaging.Message(
                 notification=messaging.Notification(
-                    title="JAMU.chat",
-                    body=f"{sender}: {message}"
+                    title=f"📩 Senga xabar keldi: {sender}",
+                    body=push_text
                 ),
                 data={
                     "sender": sender,
-                    "message": message,
+                    "message": push_text,
                     "type": "private_message"
                 },
                 token=fcm_token
