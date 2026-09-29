@@ -54,6 +54,9 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.2")
     implementation("androidx.camera:camera-view:1.3.2")
 
+    // Agora Real-Time HD Video & Crystal-Clear Audio RTC Engine
+    implementation("io.agora.rtc:full-sdk:4.3.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

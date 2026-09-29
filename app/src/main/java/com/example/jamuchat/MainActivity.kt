@@ -357,9 +357,11 @@ class MainActivity : ComponentActivity() {
                     if (activeVideoCallUser != null) {
                         val opponent = activeVideoCallUser!!
                         val opponentStatus = onlineUsersList.find { it.name.trim().equals(opponent.trim(), ignoreCase = true) }
+                        val channelName = "jamu_call_" + listOf(currentUserName.trim().lowercase(), opponent.trim().lowercase()).sorted().joinToString("_")
                         com.example.jamuchat.ui.VideoCallScreen(
                             targetUserName = opponent,
                             targetProfileImageUrl = opponentStatus?.profileImageUrl,
+                            callChannelName = channelName,
                             callStatus = videoCallStatus,
                             onEndCall = {
                                 wsClient.endVideoCall(opponent)
