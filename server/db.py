@@ -113,6 +113,15 @@ def get_fcm_token(username: str) -> str:
     conn.close()
     return row[0] if row and row[0] else ""
 
+def format_image_url(pimg: str) -> str:
+    if not pimg or pimg == "null":
+        return ""
+    if "/uploads/" in pimg:
+        parts = pimg.split("/uploads/")
+        if len(parts) > 1:
+            return f"https://jamu-cat.onrender.com/uploads/{parts[1]}"
+    return pimg
+
 def get_all_registered_users() -> List[Dict]:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -122,13 +131,7 @@ def get_all_registered_users() -> List[Dict]:
 
     result = []
     for r in rows:
-        pimg = r[2] or ""
-        if "trycloudflare.com" in pimg:
-            parts = pimg.split("/uploads/profile/")
-            if len(parts) > 1:
-                pimg = f"https://jamu-cat.onrender.com/uploads/profile/{parts[1]}"
-            else:
-                pimg = ""
+        pimg = format_image_url(r[2] or "")
         result.append({
             "username": r[0],
             "display_name": r[1] or r[0],
@@ -161,13 +164,7 @@ def get_chat_history(user1: str, user2: str) -> List[Dict]:
 
     result = []
     for r in rows:
-        img_url = r[4] or ""
-        if "trycloudflare.com" in img_url:
-            parts = img_url.split("/uploads/")
-            if len(parts) > 1:
-                img_url = f"https://jamu-cat.onrender.com/uploads/{parts[1]}"
-            else:
-                img_url = ""
+        img_url = format_image_url(r[4] or "")
         result.append({
             "id": r[0],
             "sender": r[1],

@@ -9,17 +9,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.example.jamuchat.ui.theme.JamuOfflineRed
 import com.example.jamuchat.ui.theme.JamuOnlineGreen
 import com.example.jamuchat.ui.theme.JamuPrimary
@@ -57,8 +61,18 @@ fun JamuAvatar(
         contentAlignment = Alignment.Center
     ) {
         if (!imageUrl.isNullOrBlank() && imageUrl != "null") {
+            val context = LocalContext.current
+            val imageRequest = remember(imageUrl) {
+                ImageRequest.Builder(context)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build()
+            }
+
             AsyncImage(
-                model = imageUrl,
+                model = imageRequest,
                 contentDescription = "Profil rasmi",
                 modifier = Modifier
                     .size(size)

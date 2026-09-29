@@ -9,6 +9,8 @@ class UserPreferences(context: Context) {
 
     companion object {
         private const val KEY_USERNAME = "KEY_USERNAME"
+        private const val KEY_DISPLAY_NAME = "KEY_DISPLAY_NAME"
+        private const val KEY_PROFILE_IMAGE_URL = "KEY_PROFILE_IMAGE_URL"
         private const val KEY_PHONE_NUMBER = "KEY_PHONE_NUMBER"
         private const val KEY_SERVER_URL = "KEY_SERVER_URL"
         private const val KEY_DEVICE_ID = "KEY_DEVICE_ID"
@@ -39,14 +41,29 @@ class UserPreferences(context: Context) {
     fun getUsername(): String? {
         val name = prefs.getString(KEY_USERNAME, null)
         if (!name.isNullOrBlank()) {
-            val lower = name.trim().lowercase()
-            if (lower.contains("jamshid") || lower.contains("dilrabo") || lower.contains("jak")) {
-                prefs.edit().remove(KEY_USERNAME).apply()
-                return null
-            }
-            return name
+            return name.trim()
         }
         return null
+    }
+
+    fun saveDisplayName(displayName: String) {
+        prefs.edit().putString(KEY_DISPLAY_NAME, displayName.trim()).apply()
+    }
+
+    fun getDisplayName(): String? {
+        return prefs.getString(KEY_DISPLAY_NAME, null)
+    }
+
+    fun saveProfileImageUrl(imageUrl: String?) {
+        if (imageUrl.isNullOrBlank()) {
+            prefs.edit().remove(KEY_PROFILE_IMAGE_URL).apply()
+        } else {
+            prefs.edit().putString(KEY_PROFILE_IMAGE_URL, imageUrl.trim()).apply()
+        }
+    }
+
+    fun getProfileImageUrl(): String? {
+        return prefs.getString(KEY_PROFILE_IMAGE_URL, null)
     }
 
     fun saveServerUrl(url: String) {
@@ -67,6 +84,8 @@ class UserPreferences(context: Context) {
 
     fun clearUsername() {
         prefs.edit().remove(KEY_USERNAME).apply()
+        prefs.edit().remove(KEY_DISPLAY_NAME).apply()
+        prefs.edit().remove(KEY_PROFILE_IMAGE_URL).apply()
     }
 
     fun clear() {
