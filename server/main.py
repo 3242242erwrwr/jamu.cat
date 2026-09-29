@@ -113,6 +113,22 @@ async def upload_chat_image(request: Request, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/users/register")
+async def register_user_endpoint(request: Request):
+    try:
+        data = await request.json()
+        username = data.get("username", "").strip()
+        phone_number = data.get("phone_number", "").strip()
+        if username:
+            register_user(username, phone_number)
+            print(f"[HTTP Register] '{username}' registered with phone '{phone_number}'")
+            await manager.broadcast_user_list()
+            return {"status": "ok", "username": username, "phone_number": phone_number}
+        raise HTTPException(status_code=400, detail="Username is required")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class ConnectionManager:
     """JAMU.chat foydalanuvchilarining WebSocket ulanishlarini va statuslarini boshqaruvchi menejer"""
 
@@ -271,7 +287,8 @@ async def root():
 @app.websocket("/ws/{username}/")
 @app.websocket("/ws/{username}/{device_id}")
 async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str = ""):
-    register_user(username)
+    phone_from_query = websocket.query_params.get("phone", "")
+    register_user(username, phone_from_query)
     await manager.connect(username, websocket)
     try:
         while True:

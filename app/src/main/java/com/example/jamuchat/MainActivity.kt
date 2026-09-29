@@ -217,6 +217,25 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                fun registerUserHttp(serverUrl: String, username: String, phone: String) {
+                    Thread {
+                        try {
+                            val httpBase = getHttpBaseUrl(serverUrl)
+                            val url = "$httpBase/users/register"
+                            val json = JSONObject().apply {
+                                put("username", username)
+                                put("phone_number", phone)
+                            }
+                            val body = json.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+                            val request = Request.Builder().url(url).post(body).build()
+                            val client = OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).build()
+                            client.newCall(request).execute().close()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }.start()
+                }
+
                 fun connectToServer(name: String, phone: String = "", url: String = serverUrl) {
                     currentUserName = name
                     currentUserDisplayName = name
@@ -225,7 +244,9 @@ class MainActivity : ComponentActivity() {
                     userPrefs.saveUsername(name)
                     userPrefs.savePhoneNumber(phone)
                     userPrefs.saveServerUrl(url)
-                    wsClient.connect(url, name, userPrefs.getDeviceId())
+
+                    registerUserHttp(url, name, phone)
+                    wsClient.connect(url, name, userPrefs.getDeviceId(), phone)
 
                     try {
                         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->

@@ -73,10 +73,13 @@ class ChatWebSocketClient(
         pingRunnable = null
     }
 
-    fun connect(baseUrl: String, username: String, deviceId: String) {
+    private var currentPhoneNumber: String = ""
+
+    fun connect(baseUrl: String, username: String, deviceId: String, phoneNumber: String = "") {
         currentUsername = username
         currentBaseUrl = baseUrl
         currentDeviceId = deviceId
+        currentPhoneNumber = phoneNumber
         isIntentionallyClosed = false
 
         var formatted = baseUrl.trim().trimEnd('/')
@@ -99,7 +102,13 @@ class ChatWebSocketClient(
             username.trim()
         }
 
-        val wsUrl = "$cleanBase/ws/$encodedUsername/$deviceId"
+        val encodedPhone = try {
+            URLEncoder.encode(phoneNumber.trim(), "UTF-8")
+        } catch (_: Exception) {
+            phoneNumber.trim()
+        }
+
+        val wsUrl = "$cleanBase/ws/$encodedUsername/$deviceId?phone=$encodedPhone"
         Log.d("JAMU_WS", "WebSocket connecting: $wsUrl")
 
         val request = Request.Builder()
@@ -114,6 +123,9 @@ class ChatWebSocketClient(
                 mainHandler.post {
                     onConnectionStatusChanged(true)
                     startPingLoop()
+                    if (currentUsername.isNotEmpty() && currentPhoneNumber.isNotEmpty()) {
+                        updateProfile(currentUsername, currentUsername, null, currentPhoneNumber)
+                    }
                 }
             }
 
