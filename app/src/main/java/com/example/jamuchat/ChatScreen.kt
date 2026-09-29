@@ -95,6 +95,7 @@ fun MainChatScreen(
     onRefreshChat: (targetUser: String) -> Unit,
     onDeleteUserPermanently: (targetUser: String) -> Unit,
     onCallUser: (phoneNumber: String) -> Unit,
+    onStartVideoCall: (targetUser: String) -> Unit = {},
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -241,6 +242,7 @@ fun MainChatScreen(
                         onRefreshChat(selectedPrivateUser)
                     },
                     onCallUser = onCallUser,
+                    onStartVideoCall = onStartVideoCall,
                     onBack = onBackFromPrivateChat
                 )
             } else {
@@ -474,6 +476,7 @@ fun PrivateChatScreen(
     onClearHistory: () -> Unit,
     onRefreshChat: () -> Unit,
     onCallUser: (phone: String) -> Unit = {},
+    onStartVideoCall: (targetUser: String) -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -596,6 +599,24 @@ fun PrivateChatScreen(
                     )
                 }
 
+                // Glowing Cyan Neon Video Call Button
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF00E5FF).copy(alpha = 0.25f))
+                        .border(1.5.dp, Color(0xFF00E5FF), CircleShape)
+                        .clickable { onStartVideoCall(targetUserName) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📹",
+                        fontSize = 15.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Glowing Green Neon Call Button
                 Box(
                     modifier = Modifier
@@ -621,7 +642,7 @@ fun PrivateChatScreen(
                 ) {
                     Text(
                         text = "📞",
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
                 }
 

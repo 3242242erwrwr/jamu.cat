@@ -21,9 +21,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -90,6 +96,10 @@ class MainActivity : ComponentActivity() {
 
                 var isOnline by remember { mutableStateOf(false) }
                 var errorMessage by remember { mutableStateOf<String?>(null) }
+
+                var activeVideoCallUser by remember { mutableStateOf<String?>(null) }
+                var incomingVideoCallUser by remember { mutableStateOf<String?>(null) }
+                var videoCallStatus by remember { mutableStateOf("idle") }
 
                 val onlineUsersList = remember { mutableStateListOf<UserStatus>() }
                 val privateMessagesMap = remember {
@@ -194,6 +204,28 @@ class MainActivity : ComponentActivity() {
                         onChatHistoryCleared = { targetUser ->
                             privateMessagesMap[targetUser]?.clear()
                         },
+                        onVideoCallOfferReceived = { caller ->
+                            incomingVideoCallUser = caller
+                        },
+                        onVideoCallAnswerReceived = { opponent ->
+                            if (activeVideoCallUser?.trim()?.equals(opponent.trim(), ignoreCase = true) == true) {
+                                videoCallStatus = "connected"
+                            }
+                        },
+                        onVideoCallRejectedReceived = { opponent ->
+                            if (activeVideoCallUser?.trim()?.equals(opponent.trim(), ignoreCase = true) == true) {
+                                activeVideoCallUser = null
+                                videoCallStatus = "idle"
+                                Toast.makeText(context, "$opponent qo'ng'iroqni rad etdi", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onVideoCallEndedReceived = { opponent ->
+                            if (activeVideoCallUser?.trim()?.equals(opponent.trim(), ignoreCase = true) == true) {
+                                activeVideoCallUser = null
+                                videoCallStatus = "idle"
+                                Toast.makeText(context, "$opponent video muloqotni yakunladi", Toast.LENGTH_SHORT).show()
+                            }
+                        },
                         onNameTaken = {
                             currentScreen = Screen.Login
                             userPrefs.clearUsername()
@@ -271,7 +303,65 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    when (currentScreen) {
+                    if (incomingVideoCallUser != null) {
+                        val caller = incomingVideoCallUser!!
+                        AlertDialog(
+                            onDismissRequest = {
+                                wsClient.rejectVideoCall(caller)
+                                incomingVideoCallUser = null
+                            },
+                            title = {
+                                Text("Kiruvchi Video Qo'ng'iroq 📹", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            },
+                            text = {
+                                Text("$caller sizga video qo'ng'iroq qilmoqda...", style = MaterialTheme.typography.bodyMedium)
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        wsClient.sendVideoCallAnswer(caller)
+                                        activeVideoCallUser = caller
+                                        videoCallStatus = "connected"
+                                        incomingVideoCallUser = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFF00E676)),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Qabul qilish", fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
+                                }
+                            },
+                            dismissButton = {
+                                Button(
+                                    onClick = {
+                                        wsClient.rejectVideoCall(caller)
+                                        incomingVideoCallUser = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFFEF4444)),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Rad etish", fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+
+                    if (activeVideoCallUser != null) {
+                        val opponent = activeVideoCallUser!!
+                        val opponentStatus = onlineUsersList.find { it.name.trim().equals(opponent.trim(), ignoreCase = true) }
+                        com.example.jamuchat.ui.VideoCallScreen(
+                            targetUserName = opponent,
+                            targetProfileImageUrl = opponentStatus?.profileImageUrl,
+                            callStatus = videoCallStatus,
+                            onEndCall = {
+                                wsClient.endVideoCall(opponent)
+                                activeVideoCallUser = null
+                                videoCallStatus = "idle"
+                            },
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    } else {
+                        when (currentScreen) {
                         Screen.Splash -> {
                             SplashScreen(
                                 onTimeout = {
@@ -403,6 +493,11 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 },
+                                onStartVideoCall = { targetUser ->
+                                    activeVideoCallUser = targetUser
+                                    videoCallStatus = "calling"
+                                    wsClient.sendVideoCallOffer(targetUser)
+                                },
                                 onRefreshChat = { targetUser ->
                                     if (currentUserName.isNotEmpty()) {
                                         if (!isOnline) {
@@ -423,6 +518,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

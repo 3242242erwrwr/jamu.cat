@@ -31,6 +31,10 @@ class ChatWebSocketClient(
     private val onPrivateMessageReceived: (sender: String, receiver: String, message: String, imageUrl: String?, timestamp: String) -> Unit,
     private val onChatHistoryReceived: (targetUser: String, messages: List<com.example.jamuchat.ChatMessage>) -> Unit,
     private val onChatHistoryCleared: (targetUser: String) -> Unit = {},
+    private val onVideoCallOfferReceived: (sender: String) -> Unit = {},
+    private val onVideoCallAnswerReceived: (sender: String) -> Unit = {},
+    private val onVideoCallRejectedReceived: (sender: String) -> Unit = {},
+    private val onVideoCallEndedReceived: (sender: String) -> Unit = {},
     private val onNameTaken: () -> Unit = {},
     private val onErrorOccurred: (errorMsg: String) -> Unit
 ) {
@@ -219,6 +223,26 @@ class ChatWebSocketClient(
                             }
                         }
 
+                        "video_call_offer" -> {
+                            val sender = json.optString("sender")
+                            mainHandler.post { onVideoCallOfferReceived(sender) }
+                        }
+
+                        "video_call_answer" -> {
+                            val sender = json.optString("sender")
+                            mainHandler.post { onVideoCallAnswerReceived(sender) }
+                        }
+
+                        "video_call_reject" -> {
+                            val sender = json.optString("sender")
+                            mainHandler.post { onVideoCallRejectedReceived(sender) }
+                        }
+
+                        "video_call_end" -> {
+                            val sender = json.optString("sender")
+                            mainHandler.post { onVideoCallEndedReceived(sender) }
+                        }
+
                         "error" -> {
                             if (json.optString("message") == "NAME_TAKEN") {
                                 mainHandler.post { onNameTaken() }
@@ -286,6 +310,42 @@ class ChatWebSocketClient(
         val json = JSONObject().apply {
             put("type", "clear_history")
             put("target_user", targetUser)
+        }
+        webSocket?.send(json.toString())
+    }
+
+    fun sendVideoCallOffer(receiver: String) {
+        val json = JSONObject().apply {
+            put("type", "video_call_offer")
+            put("sender", currentUsername)
+            put("receiver", receiver)
+        }
+        webSocket?.send(json.toString())
+    }
+
+    fun sendVideoCallAnswer(receiver: String) {
+        val json = JSONObject().apply {
+            put("type", "video_call_answer")
+            put("sender", currentUsername)
+            put("receiver", receiver)
+        }
+        webSocket?.send(json.toString())
+    }
+
+    fun rejectVideoCall(receiver: String) {
+        val json = JSONObject().apply {
+            put("type", "video_call_reject")
+            put("sender", currentUsername)
+            put("receiver", receiver)
+        }
+        webSocket?.send(json.toString())
+    }
+
+    fun endVideoCall(receiver: String) {
+        val json = JSONObject().apply {
+            put("type", "video_call_end")
+            put("sender", currentUsername)
+            put("receiver", receiver)
         }
         webSocket?.send(json.toString())
     }
