@@ -87,8 +87,8 @@ class MainActivity : ComponentActivity() {
 
                 var currentScreen by remember { mutableStateOf(Screen.Splash) }
                 var currentUserName by remember { mutableStateOf(userPrefs.getUsername() ?: "") }
-                var currentUserDisplayName by remember { mutableStateOf(userPrefs.getDisplayName() ?: currentUserName) }
-                var currentUserProfileImageUrl by remember { mutableStateOf<String?>(userPrefs.getProfileImageUrl()) }
+                var currentUserDisplayName by remember { mutableStateOf(currentUserName) }
+                var currentUserProfileImageUrl by remember { mutableStateOf<String?>(null) }
                 var currentPhoneNumber by remember { mutableStateOf(userPrefs.getPhoneNumber()) }
                 var selectedPrivateUser by remember { mutableStateOf<String?>(null) }
 
@@ -451,9 +451,7 @@ class MainActivity : ComponentActivity() {
                                 onUpdateProfile = { newName, newImg, newPhone ->
                                     currentUserDisplayName = newName
                                     currentPhoneNumber = newPhone
-                                    userPrefs.saveDisplayName(newName)
                                     userPrefs.savePhoneNumber(newPhone)
-                                    userPrefs.saveProfileImageUrl(newImg)
                                     if (newImg != null && (newImg.startsWith("content://") || newImg.startsWith("file://"))) {
                                         uploadProfileImage(
                                             context = context,
@@ -461,7 +459,6 @@ class MainActivity : ComponentActivity() {
                                             imageUri = newImg,
                                             onSuccess = { remoteUrl ->
                                                 currentUserProfileImageUrl = remoteUrl
-                                                userPrefs.saveProfileImageUrl(remoteUrl)
                                                 wsClient.updateProfile(currentUserName, newName, remoteUrl, newPhone)
                                             },
                                             onError = { err ->
@@ -470,7 +467,6 @@ class MainActivity : ComponentActivity() {
                                         )
                                     } else {
                                         currentUserProfileImageUrl = newImg
-                                        userPrefs.saveProfileImageUrl(newImg)
                                         wsClient.updateProfile(currentUserName, newName, newImg, newPhone)
                                     }
                                 },
