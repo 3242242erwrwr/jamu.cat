@@ -205,7 +205,14 @@ class ConnectionManager:
             print(f"[FCM Info] Push Notification ({e})")
 
     async def send_private_message(self, msg_id: str, sender: str, receiver: str, message: str, image_url: str, timestamp: str) -> bool:
+        # Re-register sender and receiver in DB if they were deleted!
+        register_user(sender)
+        register_user(receiver)
+
         save_message(msg_id, sender, receiver, message, image_url, timestamp)
+
+        # Broadcast updated user list so sender and receiver reappear in everyone's user list in real-time!
+        await self.broadcast_user_list()
 
         payload = json.dumps({
             "type": "private_message",
