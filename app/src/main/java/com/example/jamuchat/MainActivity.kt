@@ -391,7 +391,6 @@ class MainActivity : ComponentActivity() {
                                     currentPhoneNumber = newPhone
                                     userPrefs.saveDisplayName(newName)
                                     userPrefs.savePhoneNumber(newPhone)
-                                    userPrefs.saveProfileImageUrl(newImg)
                                     if (newImg != null && (newImg.startsWith("content://") || newImg.startsWith("file://"))) {
                                         uploadProfileImage(
                                             context = context,
