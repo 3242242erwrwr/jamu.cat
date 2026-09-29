@@ -19,17 +19,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,10 +44,8 @@ import androidx.core.content.ContextCompat
 import com.example.jamuchat.network.ChatWebSocketClient
 import com.example.jamuchat.network.UserStatus
 import com.example.jamuchat.ui.theme.JamuchatTheme
-import com.example.jamuchat.util.ApkUpdateManager
 import com.example.jamuchat.util.NotificationHelper
 import com.example.jamuchat.util.UserPreferences
-import com.example.jamuchat.util.VersionInfo
 import com.google.firebase.messaging.FirebaseMessaging
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -99,10 +90,6 @@ class MainActivity : ComponentActivity() {
                 var isOnline by remember { mutableStateOf(false) }
                 var errorMessage by remember { mutableStateOf<String?>(null) }
 
-                var updateVersionInfo by remember { mutableStateOf<VersionInfo?>(null) }
-                var isDownloadingApk by remember { mutableStateOf(false) }
-                var apkDownloadProgress by remember { mutableStateOf(0) }
-
                 val onlineUsersList = remember { mutableStateListOf<UserStatus>() }
                 val privateMessagesMap = remember {
                     mutableStateMapOf<String, MutableList<ChatMessage>>()
@@ -128,19 +115,6 @@ class MainActivity : ComponentActivity() {
                             ) != PackageManager.PERMISSION_GRANTED
                         ) {
                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
-                }
-
-                LaunchedEffect(serverUrl) {
-                    if (serverUrl.isNotBlank()) {
-                        ApkUpdateManager.checkVersion(serverUrl) { info ->
-                            if (info != null) {
-                                val currentVersionCode = ApkUpdateManager.getCurrentVersionCode(context)
-                                if (info.versionCode > currentVersionCode && info.apkUrl.isNotBlank()) {
-                                    updateVersionInfo = info
-                                }
-                            }
                         }
                     }
                 }
@@ -265,87 +239,6 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (updateVersionInfo != null) {
-                        val info = updateVersionInfo!!
-                        if (isDownloadingApk) {
-                            AlertDialog(
-                                onDismissRequest = { },
-                                title = { Text("Yangilanmoqda...", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
-                                text = {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        LinearProgressIndicator(
-                                            progress = { apkDownloadProgress / 100f },
-                                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Text("$apkDownloadProgress%", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                    }
-                                },
-                                confirmButton = { },
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                        } else {
-                            AlertDialog(
-                                onDismissRequest = {
-                                    if (!info.forceUpdate) {
-                                        updateVersionInfo = null
-                                    }
-                                },
-                                title = {
-                                    Text(
-                                        text = if (info.forceUpdate) "JAMU.chat'ni yangilash kerak." else "Yangi versiya mavjud",
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                },
-                                text = {
-                                    Text(
-                                        text = "JAMU.chat ${info.versionName} versiyasi mavjud.",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                },
-                                confirmButton = {
-                                    Button(
-                                        onClick = {
-                                            isDownloadingApk = true
-                                            apkDownloadProgress = 0
-                                            ApkUpdateManager.downloadApk(
-                                                context = context,
-                                                apkUrl = info.apkUrl,
-                                                onProgress = { progress ->
-                                                    apkDownloadProgress = progress
-                                                },
-                                                onComplete = { downloadedFile ->
-                                                    isDownloadingApk = false
-                                                    if (downloadedFile != null) {
-                                                        updateVersionInfo = null
-                                                        ApkUpdateManager.installApk(context, downloadedFile)
-                                                    } else {
-                                                        Toast.makeText(context, "Yuklab olishda xatolik yuz berdi", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                            )
-                                        },
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Text("Yangilash", fontWeight = FontWeight.Bold)
-                                    }
-                                },
-                                dismissButton = {
-                                    if (!info.forceUpdate) {
-                                        TextButton(onClick = { updateVersionInfo = null }) {
-                                            Text("Keyinroq")
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                        }
-                    }
-
                     when (currentScreen) {
                         Screen.Splash -> {
                             SplashScreen(
@@ -454,6 +347,15 @@ class MainActivity : ComponentActivity() {
                                 onClearHistory = { targetUser ->
                                     wsClient.clearHistory(targetUser)
                                     privateMessagesMap[targetUser]?.clear()
+                                },
+                                onRefreshChat = { targetUser ->
+                                    if (currentUserName.isNotEmpty()) {
+                                        if (!isOnline) {
+                                            connectToServer(currentUserName, serverUrl)
+                                        }
+                                        wsClient.fetchHistory(targetUser)
+                                        Toast.makeText(context, "Yangi o'zgarishlar va xabarlar yangilandi 🔄", Toast.LENGTH_SHORT).show()
+                                    }
                                 },
                                 onBackFromPrivateChat = {
                                     selectedPrivateUser = null

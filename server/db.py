@@ -47,29 +47,19 @@ def init_db():
     conn.commit()
     conn.close()
 
-def register_user(username: str, device_id: str = "") -> bool:
+def register_user(username: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     clean = username.strip()
-
-    # Check if the exact lowercased username already has a device_id assigned
-    cursor.execute("SELECT device_id FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
+    cursor.execute("SELECT username FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
     row = cursor.fetchone()
-
     if row:
-        existing_device = row[0]
-        # If there's an existing device_id and it's different from the current one, reject!
-        if existing_device and existing_device.strip() and existing_device != device_id:
-            conn.close()
-            return False
-
-        cursor.execute("UPDATE users SET display_name = ?, device_id = ? WHERE LOWER(username) = LOWER(?)", (clean, device_id, clean))
+        existing_uname = row[0]
+        cursor.execute("UPDATE users SET display_name = ? WHERE username = ?", (clean, existing_uname))
     else:
-        cursor.execute("INSERT INTO users (username, display_name, device_id) VALUES (?, ?, ?)", (clean, clean, device_id))
-
+        cursor.execute("INSERT INTO users (username, display_name) VALUES (?, ?)", (clean, clean))
     conn.commit()
     conn.close()
-    return True
 
 def update_user_profile(username: str, display_name: str, profile_image_url: str):
     conn = sqlite3.connect(DB_PATH)

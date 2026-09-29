@@ -88,6 +88,7 @@ fun MainChatScreen(
     onSendMessage: (targetUser: String, text: String, imageUrl: String?) -> Unit,
     onUpdateProfile: (displayName: String, imageUrl: String?) -> Unit,
     onClearHistory: (targetUser: String) -> Unit,
+    onRefreshChat: (targetUser: String) -> Unit,
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -223,6 +224,9 @@ fun MainChatScreen(
                     },
                     onClearHistory = {
                         onClearHistory(selectedPrivateUser)
+                    },
+                    onRefreshChat = {
+                        onRefreshChat(selectedPrivateUser)
                     },
                     onBack = onBackFromPrivateChat
                 )
@@ -453,6 +457,7 @@ fun PrivateChatScreen(
     showBackButton: Boolean = false,
     onSendMessage: (text: String, imageUrl: String?) -> Unit,
     onClearHistory: () -> Unit,
+    onRefreshChat: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -592,6 +597,33 @@ fun PrivateChatScreen(
                         JamuMessageBubble(message = message)
                     }
                 }
+            }
+        }
+
+        // "Meni yanglab tur" Refresh Bar at bottom of chat screen
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .clickable { onRefreshChat() }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "🔄 ", fontSize = 11.sp)
+                Text(
+                    text = "Meni yanglab tur",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
 

@@ -130,6 +130,7 @@ class ConnectionManager:
         return self.active_users.get(username.strip().lower())
 
     async def connect(self, username: str, websocket: WebSocket):
+        await websocket.accept()
         clean_name = username.strip()
         key = clean_name.lower()
         self.active_users[key] = websocket
@@ -259,12 +260,7 @@ async def root():
 @app.websocket("/ws/{username}/")
 @app.websocket("/ws/{username}/{device_id}")
 async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str = ""):
-    await websocket.accept()
-    if not register_user(username, device_id):
-        await websocket.send_text(json.dumps({"type": "error", "message": "NAME_TAKEN"}))
-        await websocket.close(code=1008)
-        return
-
+    register_user(username)
     await manager.connect(username, websocket)
     try:
         while True:
