@@ -61,7 +61,8 @@ import java.util.concurrent.TimeUnit
 enum class Screen {
     Splash,
     Login,
-    MainChat
+    MainChat,
+    AiChat
 }
 
 class MainActivity : ComponentActivity() {
@@ -361,8 +362,28 @@ class MainActivity : ComponentActivity() {
                                         Toast.makeText(context, "Yangi o'zgarishlar va xabarlar yangilandi 🔄", Toast.LENGTH_SHORT).show()
                                     }
                                 },
+                                onOpenAiChat = {
+                                    currentScreen = Screen.AiChat
+                                },
                                 onBackFromPrivateChat = {
                                     selectedPrivateUser = null
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
+                        Screen.AiChat -> {
+                            com.example.jamuchat.ui.AiChatScreen(
+                                serverUrl = serverUrl,
+                                onBack = {
+                                    currentScreen = Screen.MainChat
+                                },
+                                onSendAiPrompt = { prompt, onReply ->
+                                    com.example.jamuchat.network.AiRepository.askAi(
+                                        serverUrl = serverUrl,
+                                        prompt = prompt,
+                                        onResult = onReply
+                                    )
                                 },
                                 modifier = Modifier.padding(innerPadding)
                             )

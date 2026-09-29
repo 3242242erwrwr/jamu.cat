@@ -27,6 +27,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -90,6 +92,7 @@ fun MainChatScreen(
     onClearHistory: (targetUser: String) -> Unit,
     onRefreshChat: (targetUser: String) -> Unit,
     onDeleteUserPermanently: (targetUser: String) -> Unit,
+    onOpenAiChat: () -> Unit,
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -185,6 +188,7 @@ fun MainChatScreen(
             onReconnect = onReconnect,
             onUserClick = onUserClick,
             onOpenProfile = { showProfileDialog = true },
+            onOpenAiChat = onOpenAiChat,
             onUserLongClick = { user -> userToDelete = user },
             modifier = Modifier
                 .weight(0.35f)
@@ -255,6 +259,7 @@ fun UserListScreen(
     errorMessage: String?,
     onReconnect: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenAiChat: () -> Unit,
     onUserLongClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     onUserClick: (String) -> Unit = {}
@@ -282,6 +287,7 @@ fun UserListScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
+                            .weight(1f, fill = false)
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onOpenProfile() }
                             .padding(2.dp)
@@ -305,16 +311,43 @@ fun UserListScreen(
                         )
                     }
 
-                    IconButton(
-                        onClick = { onOpenProfile() },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Text(
-                            text = "⋮",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // AI Button (Right next to username as requested in screenshot)
+                        Surface(
+                            onClick = onOpenAiChat,
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0xFFA855F7)))
+                            ),
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(text = "🤖 ", fontSize = 10.sp)
+                                Text(
+                                    text = "AI",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = { onOpenProfile() },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Text(
+                                text = "⋮",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 

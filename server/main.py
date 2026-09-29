@@ -4,6 +4,7 @@ import sys
 import uuid
 import asyncio
 import urllib.request
+import urllib.parse
 import uvicorn
 from typing import Dict, List
 
@@ -110,6 +111,53 @@ async def upload_chat_image(request: Request, file: UploadFile = File(...)):
         return {"image_url": image_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def generate_ai_response(prompt: str) -> str:
+    clean_prompt = prompt.strip()
+
+    # Try free pollinations AI text API
+    try:
+        encoded_prompt = urllib.parse.quote(f"{clean_prompt} (Javobni o'zbek tilida, qisqa, tushunarli va chiroyli shaklda ber)")
+        ai_url = f"https://text.pollinations.ai/{encoded_prompt}"
+        req = urllib.request.Request(ai_url, headers={"User-Agent": "Mozilla/5.0"})
+
+        def fetch_url():
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                return resp.read().decode('utf-8').strip()
+
+        text_reply = await asyncio.to_thread(fetch_url)
+        if text_reply and len(text_reply) > 2 and "404" not in text_reply and "Error" not in text_reply:
+            return text_reply
+    except Exception as e:
+        print(f"[AI Info] Free AI API exception: {e}")
+
+    # Smart conversational Uzbek response engine fallback
+    lower = clean_prompt.lower()
+    if any(w in lower for w in ["salom", "assalom", "privet", "hello"]):
+        return "Vaalaykum assalom! Men JAMU.chat AI Yordamchiman 🤖. Sizga qanday yordam bera olaman?"
+    elif any(w in lower for w in ["isming", "kimsan", "kim bu"]):
+        return "Men JAMU.chat ilovasining bepul sun'iy intellekt (AI) yordamchisiman 🤖. Menga har qanday savolingizni berishingiz mumkin!"
+    elif "dasturlash" in lower or "kod" in lower:
+        return "Dasturlash — bu kompyuterlarga ko'rsatmalar berish san'ati! Mashhur tillar: Python, Kotlin, JavaScript va C++. Qaysi yo'nalishga qiziqasiz?"
+    elif "python" in lower or "kotlin" in lower:
+        return "Python — Sun'iy intellekt (AI) va backend uchun zo'r til! Kotlin esa Android ilovalar yaratish uchun eng zamonaviy va xavfsiz til hisoblanadi."
+    else:
+        return f"Sizning savolingiz: \"{clean_prompt}\". JAMU.chat AI sizga yordam berishdan mamnun! Menga yana savol berishingiz mumkin."
+
+
+@app.post("/api/ai/chat")
+async def ai_chat_endpoint(request: Request):
+    try:
+        data = await request.json()
+        prompt = data.get("prompt", "").strip()
+        if not prompt:
+            return {"reply": "Iltimos, biror bir savol yozing."}
+
+        reply = await generate_ai_response(prompt)
+        return {"reply": reply}
+    except Exception as e:
+        return {"reply": f"AI Javobi: Savolingiz qabul qilindi. ({str(e)})"}
 
 
 class ConnectionManager:
