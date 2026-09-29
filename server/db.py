@@ -30,6 +30,8 @@ def init_db():
         cursor.execute("ALTER TABLE users ADD COLUMN last_seen TEXT")
     if "device_id" not in columns:
         cursor.execute("ALTER TABLE users ADD COLUMN device_id TEXT")
+    if "phone_number" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN phone_number TEXT")
 
     # Barcha private chat xabarlari (Chat tarixi)
     cursor.execute("""
@@ -47,26 +49,45 @@ def init_db():
     conn.commit()
     conn.close()
 
-def register_user(username: str):
+def normalize_phone_number(phone: str) -> str:
+    if not phone:
+        return ""
+    cleaned = "".join(c for c in phone if c.isdigit() or c == '+')
+    if not cleaned:
+        return ""
+    if not cleaned.startswith("+"):
+        if len(cleaned) == 9:
+            cleaned = "+998" + cleaned
+        elif len(cleaned) == 12 and cleaned.startswith("998"):
+            cleaned = "+" + cleaned
+        else:
+            cleaned = "+" + cleaned
+    return cleaned
+
+def register_user(username: str, phone_number: str = ""):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     clean = username.strip()
-    cursor.execute("SELECT username FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
+    clean_phone = normalize_phone_number(phone_number)
+    cursor.execute("SELECT username, phone_number FROM users WHERE LOWER(username) = LOWER(?)", (clean,))
     row = cursor.fetchone()
     if row:
         existing_uname = row[0]
-        cursor.execute("UPDATE users SET display_name = ? WHERE username = ?", (clean, existing_uname))
+        existing_phone = row[1] or ""
+        final_phone = clean_phone if clean_phone else existing_phone
+        cursor.execute("UPDATE users SET display_name = ?, phone_number = ? WHERE username = ?", (clean, final_phone, existing_uname))
     else:
-        cursor.execute("INSERT INTO users (username, display_name) VALUES (?, ?)", (clean, clean))
+        cursor.execute("INSERT INTO users (username, display_name, phone_number) VALUES (?, ?, ?)", (clean, clean, clean_phone))
     conn.commit()
     conn.close()
 
-def update_user_profile(username: str, display_name: str, profile_image_url: str):
+def update_user_profile(username: str, display_name: str, profile_image_url: str, phone_number: str = ""):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    clean_phone = normalize_phone_number(phone_number)
     cursor.execute("""
-        UPDATE users SET display_name = ?, profile_image_url = ? WHERE LOWER(username) = LOWER(?)
-    """, (display_name.strip(), profile_image_url, username.strip()))
+        UPDATE users SET display_name = ?, profile_image_url = ?, phone_number = ? WHERE LOWER(username) = LOWER(?)
+    """, (display_name.strip(), profile_image_url, clean_phone, username.strip()))
     conn.commit()
     conn.close()
 
@@ -95,7 +116,7 @@ def get_fcm_token(username: str) -> str:
 def get_all_registered_users() -> List[Dict]:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT username, display_name, profile_image_url, last_seen FROM users ORDER BY username ASC")
+    cursor.execute("SELECT username, display_name, profile_image_url, last_seen, phone_number FROM users ORDER BY username ASC")
     rows = cursor.fetchall()
     conn.close()
 
@@ -112,7 +133,8 @@ def get_all_registered_users() -> List[Dict]:
             "username": r[0],
             "display_name": r[1] or r[0],
             "profile_image_url": pimg,
-            "last_seen": r[3] or ""
+            "last_seen": r[3] or "",
+            "phone_number": r[4] or ""
         })
     return result
 

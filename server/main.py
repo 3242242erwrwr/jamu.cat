@@ -159,7 +159,8 @@ class ConnectionManager:
                 "display_name": u["display_name"] or uname,
                 "profile_image_url": u["profile_image_url"],
                 "is_online": self.is_online(uname),
-                "last_seen": u.get("last_seen", "")
+                "last_seen": u.get("last_seen", ""),
+                "phone_number": u.get("phone_number", "")
             })
 
         payload = json.dumps({
@@ -294,8 +295,9 @@ async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str
                     if target_user.strip().lower() == username.strip().lower():
                         display_name = data.get("display_name", username)
                         profile_image_url = data.get("profile_image_url", "")
-                        update_user_profile(username, display_name, profile_image_url)
-                        print(f"[Profile Update] '{username}' -> Display: '{display_name}', Image: '{profile_image_url}'")
+                        phone_number = data.get("phone_number", "")
+                        update_user_profile(username, display_name, profile_image_url, phone_number)
+                        print(f"[Profile Update] '{username}' -> Display: '{display_name}', Phone: '{phone_number}'")
                         await manager.broadcast_user_list()
 
                 elif msg_type == "fetch_history":

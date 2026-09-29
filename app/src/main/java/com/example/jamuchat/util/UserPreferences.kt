@@ -9,9 +9,18 @@ class UserPreferences(context: Context) {
 
     companion object {
         private const val KEY_USERNAME = "KEY_USERNAME"
+        private const val KEY_PHONE_NUMBER = "KEY_PHONE_NUMBER"
         private const val KEY_SERVER_URL = "KEY_SERVER_URL"
         private const val KEY_DEVICE_ID = "KEY_DEVICE_ID"
         private const val DEFAULT_SERVER_URL = "https://jamu-cat.onrender.com"
+    }
+
+    fun savePhoneNumber(phone: String) {
+        prefs.edit().putString(KEY_PHONE_NUMBER, phone.trim()).apply()
+    }
+
+    fun getPhoneNumber(): String {
+        return prefs.getString(KEY_PHONE_NUMBER, "") ?: ""
     }
 
     fun getDeviceId(): String {

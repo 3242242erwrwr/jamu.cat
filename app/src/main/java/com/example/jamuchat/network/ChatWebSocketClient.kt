@@ -17,7 +17,8 @@ data class UserStatus(
     val displayName: String = "",
     val profileImageUrl: String? = null,
     val isOnline: Boolean = false,
-    val lastSeen: String = ""
+    val lastSeen: String = "",
+    val phoneNumber: String = ""
 ) {
     fun getEffectiveName(): String {
         return displayName.ifBlank { name }
@@ -132,13 +133,15 @@ class ChatWebSocketClient(
                                         val dName = item.optString("display_name").takeIf { it.isNotEmpty() } ?: uName
                                         val pImg = item.optString("profile_image_url").takeIf { it.isNotEmpty() }
                                         val lSeen = item.optString("last_seen", "")
+                                        val pNum = item.optString("phone_number", "")
                                         userStatusList.add(
                                             UserStatus(
                                                 name = uName,
                                                 displayName = dName,
                                                 profileImageUrl = pImg,
                                                 isOnline = item.optBoolean("is_online", false),
-                                                lastSeen = lSeen
+                                                lastSeen = lSeen,
+                                                phoneNumber = pNum
                                             )
                                         )
                                     } else {
@@ -248,12 +251,13 @@ class ChatWebSocketClient(
         }
     }
 
-    fun updateProfile(username: String, displayName: String, profileImageUrl: String?) {
+    fun updateProfile(username: String, displayName: String, profileImageUrl: String?, phoneNumber: String = "") {
         val json = JSONObject().apply {
             put("type", "update_profile")
             put("username", username)
             put("display_name", displayName)
             put("profile_image_url", profileImageUrl ?: "")
+            put("phone_number", phoneNumber)
         }
         webSocket?.send(json.toString())
     }

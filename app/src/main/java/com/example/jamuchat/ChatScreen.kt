@@ -80,6 +80,7 @@ fun MainChatScreen(
     currentUserName: String,
     currentUserDisplayName: String,
     currentUserProfileImageUrl: String?,
+    currentUserPhoneNumber: String = "",
     usersList: List<UserStatus>,
     selectedPrivateUser: String?,
     privateMessagesMap: Map<String, List<ChatMessage>>,
@@ -88,10 +89,11 @@ fun MainChatScreen(
     onReconnect: () -> Unit,
     onUserClick: (String) -> Unit,
     onSendMessage: (targetUser: String, text: String, imageUrl: String?) -> Unit,
-    onUpdateProfile: (displayName: String, imageUrl: String?) -> Unit,
+    onUpdateProfile: (displayName: String, imageUrl: String?, phoneNumber: String) -> Unit,
     onClearHistory: (targetUser: String) -> Unit,
     onRefreshChat: (targetUser: String) -> Unit,
     onDeleteUserPermanently: (targetUser: String) -> Unit,
+    onCallUser: (phoneNumber: String) -> Unit,
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -116,9 +118,10 @@ fun MainChatScreen(
         JamuProfileDialog(
             currentDisplayName = currentUserDisplayName.ifBlank { currentUserName },
             currentProfileImageUrl = currentUserProfileImageUrl,
+            currentPhoneNumber = currentUserPhoneNumber,
             onDismiss = { showProfileDialog = false },
-            onSaveProfile = { newName, newImg ->
-                onUpdateProfile(newName, newImg)
+            onSaveProfile = { newName, newImg, newPhone ->
+                onUpdateProfile(newName, newImg, newPhone)
                 showProfileDialog = false
             }
         )
@@ -215,10 +218,14 @@ fun MainChatScreen(
                 val targetProfileImage = targetUserStatus?.profileImageUrl
                 val targetLastSeen = targetUserStatus?.lastSeen ?: ""
 
+                val targetStatus = usersList.find { it.name.trim().equals(selectedPrivateUser?.trim(), ignoreCase = true) }
+                val targetPhone = targetStatus?.phoneNumber ?: ""
+
                 PrivateChatScreen(
                     targetUserName = targetDisplayName,
                     targetProfileImageUrl = targetProfileImage,
                     targetLastSeen = targetLastSeen,
+                    targetPhoneNumber = targetPhone,
                     messagesList = pMessages,
                     isTargetOnline = targetIsOnline,
                     isClientOnline = isOnline,
@@ -232,6 +239,7 @@ fun MainChatScreen(
                     onRefreshChat = {
                         onRefreshChat(selectedPrivateUser)
                     },
+                    onCallUser = onCallUser,
                     onBack = onBackFromPrivateChat
                 )
             } else {
@@ -456,6 +464,7 @@ fun PrivateChatScreen(
     targetUserName: String,
     targetProfileImageUrl: String?,
     targetLastSeen: String,
+    targetPhoneNumber: String = "",
     messagesList: List<ChatMessage>,
     isTargetOnline: Boolean,
     isClientOnline: Boolean,
@@ -463,11 +472,13 @@ fun PrivateChatScreen(
     onSendMessage: (text: String, imageUrl: String?) -> Unit,
     onClearHistory: () -> Unit,
     onRefreshChat: () -> Unit,
+    onCallUser: (phone: String) -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
     var showClearDialog by remember { mutableStateOf(false) }
+    var showNoPhoneDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(messagesList.size) {
         if (messagesList.isNotEmpty()) {
@@ -499,6 +510,24 @@ fun PrivateChatScreen(
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
                     Text("Bekor qilish")
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    if (showNoPhoneDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoPhoneDialog = false },
+            title = {
+                Text("Telefon raqami mavjud emas", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            },
+            text = {
+                Text("Bu foydalanuvchi telefon raqamini qo'shmagan.", style = MaterialTheme.typography.bodyMedium)
+            },
+            confirmButton = {
+                TextButton(onClick = { showNoPhoneDialog = false }) {
+                    Text("Tushunarli", fontWeight = FontWeight.Bold)
                 }
             },
             shape = RoundedCornerShape(16.dp)
@@ -563,6 +592,20 @@ fun PrivateChatScreen(
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 9.sp,
                         color = if (isTargetOnline) JamuOnlineGreen else JamuOfflineRed
+                    )
+                }
+
+                IconButton(onClick = {
+                    if (targetPhoneNumber.isNotBlank()) {
+                        onCallUser(targetPhoneNumber)
+                    } else {
+                        showNoPhoneDialog = true
+                    }
+                }) {
+                    Text(
+                        text = "📞",
+                        fontSize = 16.sp,
+                        color = if (targetPhoneNumber.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
 

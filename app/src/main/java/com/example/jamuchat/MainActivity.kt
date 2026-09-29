@@ -83,6 +83,7 @@ class MainActivity : ComponentActivity() {
                 var currentUserName by remember { mutableStateOf(userPrefs.getUsername() ?: "") }
                 var currentUserDisplayName by remember { mutableStateOf(currentUserName) }
                 var currentUserProfileImageUrl by remember { mutableStateOf<String?>(null) }
+                var currentPhoneNumber by remember { mutableStateOf(userPrefs.getPhoneNumber()) }
                 var selectedPrivateUser by remember { mutableStateOf<String?>(null) }
 
                 var serverUrl by remember { mutableStateOf(userPrefs.getServerUrl()) }
@@ -216,11 +217,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                fun connectToServer(name: String, url: String) {
+                fun connectToServer(name: String, phone: String = "", url: String = serverUrl) {
                     currentUserName = name
                     currentUserDisplayName = name
+                    currentPhoneNumber = phone
                     serverUrl = url
                     userPrefs.saveUsername(name)
+                    userPrefs.savePhoneNumber(phone)
                     userPrefs.saveServerUrl(url)
                     wsClient.connect(url, name, userPrefs.getDeviceId())
 
@@ -252,9 +255,10 @@ class MainActivity : ComponentActivity() {
                         Screen.Login -> {
                             LoginScreen(
                                 initialUsername = currentUserName,
+                                initialPhoneNumber = currentPhoneNumber,
                                 initialServerUrl = serverUrl,
-                                onLoginSuccess = { userName, inputUrl ->
-                                    connectToServer(userName, inputUrl)
+                                onLoginSuccess = { userName, userPhone, inputUrl ->
+                                    connectToServer(userName, userPhone, inputUrl)
                                     currentScreen = Screen.MainChat
                                 },
                                 modifier = Modifier.padding(innerPadding)
@@ -266,6 +270,7 @@ class MainActivity : ComponentActivity() {
                                 currentUserName = currentUserName,
                                 currentUserDisplayName = currentUserDisplayName,
                                 currentUserProfileImageUrl = currentUserProfileImageUrl,
+                                currentUserPhoneNumber = currentPhoneNumber,
                                 usersList = onlineUsersList,
                                 selectedPrivateUser = selectedPrivateUser,
                                 privateMessagesMap = privateMessagesMap,
@@ -273,7 +278,7 @@ class MainActivity : ComponentActivity() {
                                 errorMessage = errorMessage,
                                 onReconnect = {
                                     if (currentUserName.isNotEmpty()) {
-                                        connectToServer(currentUserName, serverUrl)
+                                        connectToServer(currentUserName, currentPhoneNumber, serverUrl)
                                     }
                                 },
                                 onUserClick = { user ->
@@ -324,8 +329,10 @@ class MainActivity : ComponentActivity() {
                                         doSend(imageUrl)
                                     }
                                 },
-                                onUpdateProfile = { newName, newImg ->
+                                onUpdateProfile = { newName, newImg, newPhone ->
                                     currentUserDisplayName = newName
+                                    currentPhoneNumber = newPhone
+                                    userPrefs.savePhoneNumber(newPhone)
                                     if (newImg != null && (newImg.startsWith("content://") || newImg.startsWith("file://"))) {
                                         uploadProfileImage(
                                             context = context,
@@ -333,7 +340,7 @@ class MainActivity : ComponentActivity() {
                                             imageUri = newImg,
                                             onSuccess = { remoteUrl ->
                                                 currentUserProfileImageUrl = remoteUrl
-                                                wsClient.updateProfile(currentUserName, newName, remoteUrl)
+                                                wsClient.updateProfile(currentUserName, newName, remoteUrl, newPhone)
                                             },
                                             onError = { err ->
                                                 Toast.makeText(context, "Profil rasmini yuklashda xatolik: $err", Toast.LENGTH_SHORT).show()
@@ -341,7 +348,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     } else {
                                         currentUserProfileImageUrl = newImg
-                                        wsClient.updateProfile(currentUserName, newName, newImg)
+                                        wsClient.updateProfile(currentUserName, newName, newImg, newPhone)
                                     }
                                 },
                                 onClearHistory = { targetUser ->
@@ -351,6 +358,17 @@ class MainActivity : ComponentActivity() {
                                 onDeleteUserPermanently = { targetUser ->
                                     wsClient.deleteUserPermanently(targetUser)
                                     privateMessagesMap[targetUser]?.clear()
+                                },
+                                onCallUser = { phone ->
+                                    if (phone.isNotBlank()) {
+                                        try {
+                                            val normalized = normalizePhoneNumber(phone)
+                                            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$normalized"))
+                                            context.startActivity(dialIntent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Qo'ng'iroq ilovasini ochib bo'lmadi: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
                                 },
                                 onRefreshChat = { targetUser ->
                                     if (currentUserName.isNotEmpty()) {

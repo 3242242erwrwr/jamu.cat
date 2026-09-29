@@ -31,24 +31,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.jamuchat.normalizePhoneNumber
 
 @Composable
 fun JamuProfileDialog(
     currentDisplayName: String,
     currentProfileImageUrl: String?,
+    currentPhoneNumber: String = "",
     onDismiss: () -> Unit,
-    onSaveProfile: (newDisplayName: String, newProfileImageUrl: String?) -> Unit
+    onSaveProfile: (newDisplayName: String, newProfileImageUrl: String?, newPhoneNumber: String) -> Unit
 ) {
     var displayNameInput by remember { mutableStateOf(currentDisplayName) }
     var selectedImageUri by remember { mutableStateOf<String?>(currentProfileImageUrl) }
+    var phoneNumberInput by remember { mutableStateOf(currentPhoneNumber) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             selectedImageUri = it.toString()
+        }
+    }
+
+    fun handleSave() {
+        val trimmed = displayNameInput.trim()
+        val normalizedPhone = normalizePhoneNumber(phoneNumberInput)
+        if (trimmed.isNotEmpty()) {
+            onSaveProfile(trimmed, selectedImageUri, normalizedPhone)
         }
     }
 
@@ -113,24 +125,38 @@ fun JamuProfileDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        val trimmed = displayNameInput.trim()
-                        if (trimmed.isNotEmpty()) {
-                            onSaveProfile(trimmed, selectedImageUri)
-                        }
-                    })
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Telefon raqamingiz (ixtiyoriy):",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                OutlinedTextField(
+                    value = phoneNumberInput,
+                    onValueChange = { phoneNumberInput = it },
+                    placeholder = { Text("+998 90 123 45 67") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { handleSave() })
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    val trimmed = displayNameInput.trim()
-                    if (trimmed.isNotEmpty()) {
-                        onSaveProfile(trimmed, selectedImageUri)
-                    }
-                },
+                onClick = { handleSave() },
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("SAQLASH", fontWeight = FontWeight.Bold)
