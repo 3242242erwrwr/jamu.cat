@@ -16,7 +16,8 @@ data class UserStatus(
     val name: String,
     val displayName: String = "",
     val profileImageUrl: String? = null,
-    val isOnline: Boolean = false
+    val isOnline: Boolean = false,
+    val lastSeen: String = ""
 ) {
     fun getEffectiveName(): String {
         return displayName.ifBlank { name }

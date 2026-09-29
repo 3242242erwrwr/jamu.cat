@@ -208,10 +208,12 @@ fun MainChatScreen(
                 val targetIsOnline = targetUserStatus?.isOnline ?: false
                 val targetDisplayName = targetUserStatus?.getEffectiveName() ?: selectedPrivateUser
                 val targetProfileImage = targetUserStatus?.profileImageUrl
+                val targetLastSeen = targetUserStatus?.lastSeen ?: ""
 
                 PrivateChatScreen(
                     targetUserName = targetDisplayName,
                     targetProfileImageUrl = targetProfileImage,
+                    targetLastSeen = targetLastSeen,
                     messagesList = pMessages,
                     isTargetOnline = targetIsOnline,
                     isClientOnline = isOnline,
@@ -444,6 +446,7 @@ fun UserListScreen(
 fun PrivateChatScreen(
     targetUserName: String,
     targetProfileImageUrl: String?,
+    targetLastSeen: String,
     messagesList: List<ChatMessage>,
     isTargetOnline: Boolean,
     isClientOnline: Boolean,
@@ -543,8 +546,10 @@ fun PrivateChatScreen(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    
+                    val statusText = if (isTargetOnline) "🟢 Online" else "🔴 " + com.example.jamuchat.ui.components.formatLastSeen(targetLastSeen)
                     Text(
-                        text = if (isTargetOnline) "🟢 Online" else "🔴 Offline",
+                        text = statusText,
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 9.sp,
                         color = if (isTargetOnline) JamuOnlineGreen else JamuOfflineRed

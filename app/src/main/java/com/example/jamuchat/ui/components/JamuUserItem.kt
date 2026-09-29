@@ -27,6 +27,28 @@ import androidx.compose.ui.unit.sp
 import com.example.jamuchat.network.UserStatus
 import com.example.jamuchat.ui.theme.JamuOfflineRed
 import com.example.jamuchat.ui.theme.JamuOnlineGreen
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+fun formatLastSeen(timestampStr: String): String {
+    if (timestampStr.isBlank()) return "Yaqinda kirdi"
+    return try {
+        val ts = timestampStr.toLong()
+        val date = Date(ts)
+        val today = Date()
+        val formatTime = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val formatDate = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+
+        if (formatDate.format(date) == formatDate.format(today)) {
+            "Bugun, ${formatTime.format(date)} da"
+        } else {
+            "${SimpleDateFormat("dd MMM", Locale.getDefault()).format(date)}, ${formatTime.format(date)} da"
+        }
+    } catch (e: Exception) {
+        "Yaqinda kirdi"
+    }
+}
 
 @Composable
 fun JamuUserItem(
@@ -102,8 +124,9 @@ fun JamuUserItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(1.dp))
+                val statusText = if (isSelf) "Profil" else if (userStatus.isOnline) "🟢 Online" else "🔴 " + formatLastSeen(userStatus.lastSeen)
                 Text(
-                    text = if (isSelf) "Profil" else if (userStatus.isOnline) "🟢 Online" else "🔴 Offline",
+                    text = statusText,
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 8.sp,
                     color = if (userStatus.isOnline) JamuOnlineGreen else JamuOfflineRed,
