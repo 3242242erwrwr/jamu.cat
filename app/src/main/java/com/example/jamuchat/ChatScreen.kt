@@ -89,6 +89,7 @@ fun MainChatScreen(
     onUpdateProfile: (displayName: String, imageUrl: String?) -> Unit,
     onClearHistory: (targetUser: String) -> Unit,
     onRefreshChat: (targetUser: String) -> Unit,
+    onDeleteUserPermanently: (targetUser: String) -> Unit,
     onBackFromPrivateChat: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -126,14 +127,14 @@ fun MainChatScreen(
             onDismissRequest = { userToDelete = null },
             title = {
                 Text(
-                    text = "Chatni o'chirish?",
+                    text = "Foydalanuvchini to'liq o'chirish?",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "Bu foydalanuvchi '$userToDelete' chatlar ro'yxatidan olib tashlanadi.",
+                    text = "Foydalanuvchi '$userToDelete' va uning barcha yozishmalari bazadan va hammadan to'liq o'chiriladi.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -142,6 +143,7 @@ fun MainChatScreen(
                     onClick = {
                         val target = userToDelete
                         if (target != null) {
+                            onDeleteUserPermanently(target)
                             if (!hiddenUsers.contains(target)) {
                                 hiddenUsers.add(target)
                             }
@@ -156,7 +158,7 @@ fun MainChatScreen(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("O'chirish", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onError)
+                    Text("Hammadan O'chirish", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {

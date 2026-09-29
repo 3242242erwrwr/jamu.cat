@@ -274,6 +274,14 @@ class ChatWebSocketClient(
         webSocket?.send(json.toString())
     }
 
+    fun deleteUserPermanently(targetUser: String) {
+        val json = JSONObject().apply {
+            put("type", "delete_user_permanently")
+            put("target_user", targetUser)
+        }
+        webSocket?.send(json.toString())
+    }
+
     fun sendPrivateMessage(msgId: String, sender: String, receiver: String, message: String, imageUrl: String? = null, timestamp: String) {
         val json = JSONObject().apply {
             put("type", "private_message")

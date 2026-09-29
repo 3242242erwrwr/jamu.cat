@@ -165,3 +165,11 @@ def delete_chat_history(user1: str, user2: str):
     """, (user1.strip(), user2.strip(), user2.strip(), user1.strip()))
     conn.commit()
     conn.close()
+
+def delete_user_permanently(username: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE LOWER(username) = LOWER(?)", (username.strip(),))
+    cursor.execute("DELETE FROM messages WHERE LOWER(sender) = LOWER(?) OR LOWER(receiver) = LOWER(?)", (username.strip(), username.strip()))
+    conn.commit()
+    conn.close()

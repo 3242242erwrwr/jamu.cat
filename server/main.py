@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from db import init_db, register_user, update_user_profile, save_fcm_token, get_fcm_token, get_all_registered_users, save_message, get_chat_history, delete_chat_history, update_last_seen
+from db import init_db, register_user, update_user_profile, save_fcm_token, get_fcm_token, get_all_registered_users, save_message, get_chat_history, delete_chat_history, update_last_seen, delete_user_permanently
 import time
 
 init_db()
@@ -298,6 +298,14 @@ async def websocket_endpoint(websocket: WebSocket, username: str, device_id: str
                             "messages": history
                         })
                         await websocket.send_text(history_payload)
+
+                elif msg_type == "delete_user_permanently":
+                    target_user = data.get("target_user")
+                    if target_user:
+                        delete_user_permanently(target_user)
+                        manager.disconnect(target_user)
+                        print(f"[Delete User] '{target_user}' bazadan va ro'yxatdan to'liq o'chirildi ({username} tomonidan)")
+                        await manager.broadcast_user_list()
 
                 elif msg_type == "clear_history":
                     target_user = data.get("target_user")

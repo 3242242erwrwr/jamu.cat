@@ -348,6 +348,10 @@ class MainActivity : ComponentActivity() {
                                     wsClient.clearHistory(targetUser)
                                     privateMessagesMap[targetUser]?.clear()
                                 },
+                                onDeleteUserPermanently = { targetUser ->
+                                    wsClient.deleteUserPermanently(targetUser)
+                                    privateMessagesMap[targetUser]?.clear()
+                                },
                                 onRefreshChat = { targetUser ->
                                     if (currentUserName.isNotEmpty()) {
                                         if (!isOnline) {
